@@ -1,0 +1,20 @@
+{
+  "name": "cafe-management-system",
+  "version": "1.0.0",
+  "description": "Zamonaviy Kafe Boshqaruv Tizimi (POS) — HTML, React JS va Tailwind CSS",
+  "main": "index.html",
+  "scripts": {
+    "dev": "node serve.js",
+    "start": "node serve.js",
+    "build": "node build.js"
+  },
+  "keywords": [
+    "cafe",
+    "pos",
+    "restaurant",
+    "react",
+    "tailwind"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

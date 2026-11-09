@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rayhon Cafe — Zamonaviy Kafe Boshqaruv Tizimi (POS)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cafe: {
+              50: '#FDFBF7',
+              100: '#F7F1E7',
+              200: '#EDE0CE',
+              300: '#DCC5AB',
+              400: '#BFA282',
+              500: '#9E7D5C',
+              600: '#7C5E41',
+              700: '#5F442C',
+              800: '#3D2A1B',
+              900: '#26180E',
+              950: '#140C07',
+            },
+            amber: {
+              50: '#FFFBEB',
+              100: '#FEF3C7',
+              200: '#FDE68A',
+              300: '#FCD34D',
+              400: '#FBBF24',
+              500: '#F59E0B',
+              600: '#D97706',
+              700: '#B45309',
+              800: '#92400E',
+              900: '#78350F',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
+          },
+          boxShadow: {
+            'card': '0 4px 20px -2px rgba(61, 42, 27, 0.06), 0 2px 6px -1px rgba(61, 42, 27, 0.04)',
+            'card-hover': '0 12px 28px -4px rgba(61, 42, 27, 0.12), 0 4px 10px -2px rgba(61, 42, 27, 0.06)',
+            'modal': '0 25px 50px -12px rgba(26, 15, 9, 0.25)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- React 18 & ReactDOM 18 -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel Standalone -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background-color: #FAF7F2;
+      color: #26180E;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F2ECE1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #DCC5AB;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #BFA282;
+    }
+
+    /* Print receipt formatting */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printable-receipt-area, #printable-receipt-area * {
+        visibility: visible !important;
+      }
+      #printable-receipt-area {
+        position: fixed !important;
+        left: 50% !important;
+        top: 10px !important;
+        transform: translateX(-50%) !important;
+        width: 76mm !important;
+        max-width: 76mm !important;
+        margin: 0 auto !important;
+        padding: 10px !important;
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+    }
+    .animate-pulse-dot {
+      animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#FAF7F2] text-[#26180E] antialiased selection:bg-amber-500 selection:text-white">
+  <div id="root"></div>
+
+  <!-- Main Application Script -->
+  <script type="text/babel">
+

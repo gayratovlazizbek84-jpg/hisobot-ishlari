@@ -1,0 +1,3820 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rayhon Cafe — Zamonaviy Kafe Boshqaruv Tizimi (POS)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cafe: {
+              50: '#FDFBF7',
+              100: '#F7F1E7',
+              200: '#EDE0CE',
+              300: '#DCC5AB',
+              400: '#BFA282',
+              500: '#9E7D5C',
+              600: '#7C5E41',
+              700: '#5F442C',
+              800: '#3D2A1B',
+              900: '#26180E',
+              950: '#140C07',
+            },
+            amber: {
+              50: '#FFFBEB',
+              100: '#FEF3C7',
+              200: '#FDE68A',
+              300: '#FCD34D',
+              400: '#FBBF24',
+              500: '#F59E0B',
+              600: '#D97706',
+              700: '#B45309',
+              800: '#92400E',
+              900: '#78350F',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
+          },
+          boxShadow: {
+            'card': '0 4px 20px -2px rgba(61, 42, 27, 0.06), 0 2px 6px -1px rgba(61, 42, 27, 0.04)',
+            'card-hover': '0 12px 28px -4px rgba(61, 42, 27, 0.12), 0 4px 10px -2px rgba(61, 42, 27, 0.06)',
+            'modal': '0 25px 50px -12px rgba(26, 15, 9, 0.25)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- React 18 & ReactDOM 18 -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel Standalone -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background-color: #FAF7F2;
+      color: #26180E;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F2ECE1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #DCC5AB;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #BFA282;
+    }
+
+    /* Print receipt formatting */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printable-receipt-area, #printable-receipt-area * {
+        visibility: visible !important;
+      }
+      #printable-receipt-area {
+        position: fixed !important;
+        left: 50% !important;
+        top: 10px !important;
+        transform: translateX(-50%) !important;
+        width: 76mm !important;
+        max-width: 76mm !important;
+        margin: 0 auto !important;
+        padding: 10px !important;
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+    }
+    .animate-pulse-dot {
+      animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#FAF7F2] text-[#26180E] antialiased selection:bg-amber-500 selection:text-white">
+  <div id="root"></div>
+
+  <!-- Main Application Script -->
+  <script type="text/babel">
+
+
+// Web Audio API Sound Synthesizer
+const playSound = (type) => {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
+    if (type === 'add') {
+      // Pleasant high tap
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(650, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.08);
+    } else if (type === 'cash') {
+      // Cash register bell chord
+      const chords = [523.25, 659.25, 783.99, 1046.50];
+      chords.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        const start = ctx.currentTime + idx * 0.05;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.14, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.36);
+      });
+    } else if (type === 'delete') {
+      // Soft low blip
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(350, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
+    } else if (type === 'click') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.03);
+    }
+  } catch (err) {
+    // Ignore audio permission errors
+  }
+};
+
+// Formatting helpers
+const formatUZS = (num) => {
+  if (num === null || num === undefined || isNaN(num)) return "0 so'm";
+  return Number(num).toLocaleString('uz-UZ').replace(/,/g, ' ') + " so'm";
+};
+
+const formatTime = (dateObj) => {
+  const d = dateObj ? new Date(dateObj) : new Date();
+  return d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+};
+
+const formatDate = (dateObj) => {
+  const d = dateObj ? new Date(dateObj) : new Date();
+  return d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const formatDateTime = (dateObj) => {
+  const d = dateObj ? new Date(dateObj) : new Date();
+  return `${formatDate(d)}, ${formatTime(d)}`;
+};
+
+// CSV Export Helper
+const exportToCSV = (data, filename = 'rayhon_kafe_savdo_tarixi.csv') => {
+  if (!data || data.length === 0) return;
+  const headers = ["Chek raqami", "Stol", "Ofitsiant", "Mahsulotlar", "Oraliq summa (so'm)", "Xizmat haqi (so'm)", "Chegirma (so'm)", "Jami to'lov (so'm)", "To'lov turi", "Sana va vaqt"];
+  const rows = data.map(o => [
+    `"${o.id}"`,
+    `"${o.tableName}"`,
+    `"${o.waiter || 'Alisher'}"`,
+    `"${(o.items || []).map(i => `${i.name} (${i.quantity}x)`).join('; ')}"`,
+    o.subtotal || o.total,
+    o.serviceCharge || 0,
+    o.discountAmount || 0,
+    o.total,
+    `"${o.paymentMethod}"`,
+    `"${o.formattedDate}"`
+  ]);
+  const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Waiters Staff List
+const WAITERS_LIST = ["Alisher", "Sardor", "Malika", "Bobur", "Jasur"];
+
+// Initial Sample Products
+const DEFAULT_PRODUCTS = [
+  // FOOD (Taomlar)
+  { id: 'f1', name: 'Hot Dog', category: 'food', price: 18000, icon: 'hotdog', inStock: true, description: "Xantalli va sosiskali klassik issiq hot-dog" },
+  { id: 'f2', name: 'Hamburger', category: 'food', price: 25000, icon: 'hamburger', inStock: true, description: "Shirali go'shtli kotlet va maxsus sousli burger" },
+  { id: 'f3', name: 'Cheeseburger', category: 'food', price: 30000, icon: 'cheeseburger', inStock: true, description: "Eritilgan cheddar pishloqli mazali burger" },
+  { id: 'f4', name: 'Lavash', category: 'food', price: 28000, icon: 'lavash', inStock: true, description: "Grilda qarsildoq pishirilgan tovuqli/go'shtli lavash" },
+  { id: 'f5', name: 'French Fries', category: 'food', price: 15000, icon: 'fries', inStock: true, description: "Oltin rang qarsildoq fri kartoshkasi" },
+  { id: 'f6', name: 'Pizza', category: 'food', price: 55000, icon: 'pizza', inStock: true, description: "Mozzarella pishlog'i va pepperoni kolbasali pitsa" },
+
+  // DRINKS (Ichimliklar)
+  { id: 'd1', name: 'Fanta 0.5L', category: 'drinks', price: 8000, icon: 'fanta', inStock: true, description: "Muzdek apelsinli tetiklantiruvchi ichimlik" },
+  { id: 'd2', name: 'Fanta 2L', category: 'drinks', price: 20000, icon: 'fanta', inStock: true, description: "Katta dasturxonlar uchun 2 litrli gazli ichimlik" },
+  { id: 'd3', name: 'Coca-Cola 1L', category: 'drinks', price: 12000, icon: 'cola', inStock: true, description: "Klassik ta'mga ega tetiklantiruvchi ichimlik" },
+  { id: 'd4', name: 'Suv (0.5L)', category: 'drinks', price: 5000, icon: 'water', inStock: true, description: "Toza tabiiy gazsiz tog' suvi" },
+  { id: 'd5', name: 'Sharbat (Sok)', category: 'drinks', price: 12000, icon: 'juice', inStock: true, description: "100% tabiiy mevali sharbat" },
+
+  // COFFEE & DESSERT (Qahva va Shirinliklar)
+  { id: 'c1', name: "Limonli ko'k choy", category: 'coffee', price: 7000, icon: 'tea', inStock: true, description: "Yalpiz va limonli xushbo'y shifobaxsh choy" },
+  { id: 'c2', name: 'Kofe Americano', category: 'coffee', price: 14000, icon: 'coffee', inStock: true, description: "Yangi yanchilgan donali achchiq qora kofe" },
+  { id: 'c3', name: 'Kapuchino', category: 'coffee', price: 18000, icon: 'coffee', inStock: true, description: "Qalin sut ko'pikli va dolchinli kapuchino" },
+  { id: 'c4', name: 'Chizkeyk', category: 'coffee', price: 24000, icon: 'cake', inStock: true, description: "Klassik Nyu-York chizkeyki mevali qaymoq bilan" }
+];
+
+// Initial 10 Tables (Exact table 5 example from prompt included!)
+const DEFAULT_TABLES = [
+  { id: 1, name: "Stol 1", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
+  { 
+    id: 2, 
+    name: "Stol 2", 
+    status: "occupied", 
+    order: [
+      { id: 'f4', name: 'Lavash', price: 28000, quantity: 2, category: 'food' },
+      { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' },
+      { id: 'f5', name: 'French Fries', price: 15000, quantity: 1, category: 'food' }
+    ], 
+    openedAt: "13:20", 
+    waiter: "Sardor", 
+    notes: "Sous alohida idishda berilsin",
+    discountPercent: 0
+  },
+  { id: 3, name: "Stol 3", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
+  { id: 4, name: "Stol 4", status: "available", order: [], openedAt: null, waiter: "Sardor", notes: "", discountPercent: 0 },
+  { 
+    id: 5, 
+    name: "Stol 5", 
+    status: "occupied", 
+    order: [
+      { id: 'f1', name: 'Hot Dog', price: 18000, quantity: 2, category: 'food' },
+      { id: 'f2', name: 'Hamburger', price: 25000, quantity: 1, category: 'food' },
+      { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 1, category: 'drinks' }
+    ], 
+    openedAt: "13:45", 
+    waiter: "Alisher", 
+    notes: "Ikkita stakan bering",
+    discountPercent: 0
+  },
+  { id: 6, name: "Stol 6", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
+  { 
+    id: 7, 
+    name: "Stol 7", 
+    status: "payment_pending", 
+    order: [
+      { id: 'f6', name: 'Pizza', price: 55000, quantity: 1, category: 'food' },
+      { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 1, category: 'food' },
+      { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 1, category: 'drinks' }
+    ], 
+    openedAt: "13:10", 
+    waiter: "Malika", 
+    notes: "Hisob so'radi",
+    discountPercent: 0
+  },
+  { id: 8, name: "Stol 8", status: "available", order: [], openedAt: null, waiter: "Bobur", notes: "", discountPercent: 0 },
+  { id: 9, name: "Stol 9", status: "available", order: [], openedAt: null, waiter: "Jasur", notes: "", discountPercent: 0 },
+  { id: 10, name: "Stol 10", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 }
+];
+
+// Initial Order History (Today's realistic orders)
+const getInitialHistory = () => {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const dateFormatted = formatDate(now);
+  
+  return [
+    {
+      id: "ORD-1091",
+      tableId: 1,
+      tableName: "Stol 1",
+      items: [
+        { id: 'f2', name: 'Hamburger', price: 25000, quantity: 2, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 74000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 74000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 100000,
+      cashChange: 26000,
+      timestamp: `${todayStr}T10:45:00`,
+      formattedDate: `${dateFormatted}, 10:45`,
+      dateOnly: todayStr,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1092",
+      tableId: 3,
+      tableName: "Stol 3",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 1, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 1, category: 'food' },
+        { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 86000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 86000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 86000,
+      cashChange: 0,
+      timestamp: `${todayStr}T11:30:00`,
+      formattedDate: `${dateFormatted}, 11:30`,
+      dateOnly: todayStr,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1093",
+      tableId: 4,
+      tableName: "Stol 4",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 3, category: 'food' },
+        { id: 'd4', name: 'Suv (0.5L)', price: 5000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 99000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 99000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 100000,
+      cashChange: 1000,
+      timestamp: `${todayStr}T12:15:00`,
+      formattedDate: `${dateFormatted}, 12:15`,
+      dateOnly: todayStr,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1094",
+      tableId: 8,
+      tableName: "Stol 8",
+      items: [
+        { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 2, category: 'food' },
+        { id: 'c3', name: 'Kapuchino', price: 18000, quantity: 2, category: 'coffee' },
+        { id: 'c4', name: 'Chizkeyk', price: 24000, quantity: 1, category: 'coffee' }
+      ],
+      subtotal: 120000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 120000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 120000,
+      cashChange: 0,
+      timestamp: `${todayStr}T12:55:00`,
+      formattedDate: `${dateFormatted}, 12:55`,
+      dateOnly: todayStr,
+      waiter: "Malika"
+    },
+    {
+      id: "ORD-1095",
+      tableId: 6,
+      tableName: "Stol 6",
+      items: [
+        { id: 'f1', name: 'Hot Dog', price: 18000, quantity: 1, category: 'food' },
+        { id: 'd5', name: 'Sharbat (Sok)', price: 12000, quantity: 1, category: 'drinks' }
+      ],
+      subtotal: 30000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 30000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 50000,
+      cashChange: 20000,
+      timestamp: `${todayStr}T13:25:00`,
+      formattedDate: `${dateFormatted}, 13:25`,
+      dateOnly: todayStr,
+      waiter: "Bobur"
+    }
+  ];
+};
+
+const DEFAULT_SETTINGS = {
+  cafeName: "Rayhon Cafe & Lounge",
+  cafeTagline: "Shinam muhit va a'lo ta'm",
+  phone: "+998 71 200-00-22",
+  address: "Toshkent sh., Chilonzor tumani, 9-mavze",
+  receiptNote: "Tashrifingiz uchun tashakkur! Yana kutamiz!",
+  serviceFeePercent: 0,
+  soundEnabled: true,
+  currencySymbol: "so'm",
+  currentCashier: "Alisher (Kassir)"
+};
+
+// UI & General Icons
+const Icon = ({ name, className = "w-5 h-5", ...props }) => {
+  switch (name) {
+    case 'dashboard':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect width="7" height="9" x="3" y="3" rx="1" />
+          <rect width="7" height="5" x="14" y="3" rx="1" />
+          <rect width="7" height="9" x="14" y="12" rx="1" />
+          <rect width="7" height="5" x="3" y="16" rx="1" />
+        </svg>
+      );
+    case 'tables':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M4 18v3" /><path d="M20 18v3" />
+          <path d="M4 11h16" />
+          <rect width="18" height="6" x="3" y="5" rx="2" />
+        </svg>
+      );
+    case 'menu':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+          <path d="M7 2v20" />
+          <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+        </svg>
+      );
+    case 'history':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+          <path d="M12 7v5l4 2" />
+        </svg>
+      );
+    case 'stats':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M3 3v18h18" />
+          <path d="m19 9-5 5-4-4-3 3" />
+        </svg>
+      );
+    case 'settings':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      );
+    case 'plus':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M5 12h14" /><path d="M12 5v14" />
+        </svg>
+      );
+    case 'minus':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M5 12h14" />
+        </svg>
+      );
+    case 'trash':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" />
+        </svg>
+      );
+    case 'check':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      );
+    case 'close':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+        </svg>
+      );
+    case 'search':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+        </svg>
+      );
+    case 'cash':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect width="20" height="12" x="2" y="6" rx="2" />
+          <circle cx="12" cy="12" r="2" />
+          <path d="M6 12h.01M18 12h.01" />
+        </svg>
+      );
+    case 'card':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect width="20" height="14" x="2" y="5" rx="2" />
+          <line x1="2" x2="22" y1="10" y2="10" />
+        </svg>
+      );
+    case 'printer':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <polyline points="6 9 6 2 18 2 18 9" />
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+          <rect width="12" height="8" x="6" y="14" />
+        </svg>
+      );
+    case 'clock':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+        </svg>
+      );
+    case 'user':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+        </svg>
+      );
+    case 'arrow-right':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+        </svg>
+      );
+    case 'refresh':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
+          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" />
+        </svg>
+      );
+    case 'edit':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+        </svg>
+      );
+    case 'move':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <polyline points="5 9 2 12 5 15" /><polyline points="9 5 12 2 15 5" />
+          <polyline points="15 19 12 22 9 19" /><polyline points="19 9 22 12 19 15" />
+          <line x1="2" x2="22" y1="12" y2="12" /><line x1="12" x2="12" y1="2" y2="22" />
+        </svg>
+      );
+    case 'coffee-cup':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
+          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+          <line x1="6" x2="6" y1="2" y2="4" /><line x1="10" x2="10" y1="2" y2="4" /><line x1="14" x2="14" y1="2" y2="4" />
+        </svg>
+      );
+    case 'chef':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M6 13.8a4.5 4.5 0 1 1 2.6-8.2 4.5 4.5 0 0 1 6.8 0A4.5 4.5 0 1 1 18 13.8" />
+          <path d="M6 17h12" />
+          <path d="M6 21h12" />
+          <path d="M7 14v7" /><path d="M17 14v7" />
+        </svg>
+      );
+    case 'discount':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="m9 15 6-6" />
+          <circle cx="9.5" cy="9.5" r="1.5" fill="currentColor" />
+          <circle cx="14.5" cy="14.5" r="1.5" fill="currentColor" />
+          <path d="M2.5 12a9.5 9.5 0 1 0 19 0 9.5 9.5 0 1 0-19 0Z" />
+        </svg>
+      );
+    case 'download':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" x2="12" y1="15" y2="3" />
+        </svg>
+      );
+    case 'calculator':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect width="16" height="20" x="4" y="2" rx="2" />
+          <line x1="8" x2="16" y1="6" y2="6" />
+          <line x1="16" x2="16" y1="14" y2="18" />
+          <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01" />
+        </svg>
+      );
+    case 'file-text':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+          <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+          <path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+};
+
+// Delicious SVG Food & Drink Visuals
+const FoodIcon = ({ name, className = "w-12 h-12" }) => {
+  switch (name) {
+    case 'hotdog':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <ellipse cx="32" cy="46" rx="26" ry="9" fill="#D4A373" />
+          <ellipse cx="32" cy="43" rx="23" ry="7" fill="#FAEDCD" />
+          <rect x="8" y="26" width="48" height="14" rx="7" transform="rotate(-4 32 33)" fill="#C84B31" />
+          <path d="M12 30 Q 18 24, 24 33 T 36 31 T 48 33 T 54 28" stroke="#F1C40F" strokeWidth="3" strokeLinecap="round" fill="none" />
+          <ellipse cx="32" cy="24" rx="25" ry="9" fill="#E0A96D" />
+          <circle cx="20" cy="22" r="1" fill="#FFF" opacity="0.7" />
+          <circle cx="32" cy="19" r="1" fill="#FFF" opacity="0.7" />
+          <circle cx="44" cy="22" r="1" fill="#FFF" opacity="0.7" />
+        </svg>
+      );
+    case 'hamburger':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <path d="M14 46 C14 52, 50 52, 50 46 L50 42 L14 42 Z" fill="#D4A373" />
+          <rect x="11" y="36" width="42" height="7" rx="3.5" fill="#58311B" />
+          <path d="M12 34 L52 34 L48 40 L38 36 L24 40 L16 36 Z" fill="#F39C12" />
+          <path d="M10 32 Q16 28 22 33 Q28 27 34 32 Q40 28 46 33 Q50 28 54 32 L53 35 L11 35 Z" fill="#2ECC71" />
+          <rect x="13" y="27" width="38" height="5" rx="2.5" fill="#E74C3C" />
+          <path d="M12 26 C12 12, 52 12, 52 26 Z" fill="#E0A96D" />
+          <ellipse cx="22" cy="18" rx="1.5" ry="1" fill="#FFF" opacity="0.8" transform="rotate(-15 22 18)" />
+          <ellipse cx="32" cy="15" rx="1.5" ry="1" fill="#FFF" opacity="0.8" />
+          <ellipse cx="42" cy="19" rx="1.5" ry="1" fill="#FFF" opacity="0.8" transform="rotate(20 42 19)" />
+          <ellipse cx="27" cy="22" rx="1.5" ry="1" fill="#FFF" opacity="0.8" />
+          <ellipse cx="37" cy="22" rx="1.5" ry="1" fill="#FFF" opacity="0.8" />
+        </svg>
+      );
+    case 'cheeseburger':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <path d="M14 47 C14 53, 50 53, 50 47 L50 43 L14 43 Z" fill="#D4A373" />
+          <rect x="11" y="37" width="42" height="7" rx="3.5" fill="#58311B" />
+          <path d="M10 36 L54 36 L48 44 L40 38 L30 44 L20 38 L14 44 Z" fill="#F1C40F" />
+          <rect x="12" y="31" width="40" height="6" rx="3" fill="#6E2C00" />
+          <path d="M11 31 Q17 26 23 31 Q29 25 35 30 Q41 26 47 31 L52 31 L12 31 Z" fill="#27AE60" />
+          <rect x="14" y="26" width="36" height="5" rx="2.5" fill="#C0392B" />
+          <path d="M12 25 C12 11, 52 11, 52 25 Z" fill="#E0A96D" />
+          <ellipse cx="24" cy="17" rx="1.5" ry="1" fill="#FFF" opacity="0.85" />
+          <ellipse cx="33" cy="15" rx="1.5" ry="1" fill="#FFF" opacity="0.85" />
+          <ellipse cx="41" cy="18" rx="1.5" ry="1" fill="#FFF" opacity="0.85" />
+        </svg>
+      );
+    case 'lavash':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <path d="M18 36 L22 56 L42 56 L46 36 Z" fill="#BDC3C7" />
+          <path d="M18 36 L22 41 L42 41 L46 36 Z" fill="#E5E8E8" />
+          <path d="M20 18 C20 15, 44 15, 44 18 L46 38 L18 38 Z" fill="#F7DC6F" />
+          <line x1="22" y1="22" x2="42" y2="25" stroke="#BA4A00" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+          <line x1="21" y1="28" x2="43" y2="31" stroke="#BA4A00" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+          <line x1="20" y1="34" x2="44" y2="37" stroke="#BA4A00" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+          <path d="M22 18 C22 12 28 10 32 14 C36 10 42 12 42 18 Z" fill="#27AE60" />
+          <circle cx="28" cy="13" r="3" fill="#C0392B" />
+          <circle cx="36" cy="14" r="3.5" fill="#6E2C00" />
+        </svg>
+      );
+    case 'fries':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <rect x="19" y="10" width="5" height="24" rx="2" fill="#F1C40F" transform="rotate(-12 21 22)" />
+          <rect x="27" y="6" width="5" height="28" rx="2" fill="#F39C12" transform="rotate(-3 29 20)" />
+          <rect x="34" y="8" width="5" height="26" rx="2" fill="#F1C40F" transform="rotate(7 36 21)" />
+          <rect x="41" y="12" width="5" height="22" rx="2" fill="#F39C12" transform="rotate(15 43 23)" />
+          <rect x="23" y="14" width="4" height="18" rx="2" fill="#FCF3CF" />
+          <rect x="37" y="13" width="4" height="18" rx="2" fill="#FCF3CF" />
+          <path d="M16 28 L20 56 L44 56 L48 28 C42 32 22 32 16 28 Z" fill="#E74C3C" />
+          <circle cx="32" cy="42" r="7" fill="#F1C40F" />
+          <circle cx="32" cy="42" r="5" fill="#E74C3C" />
+        </svg>
+      );
+    case 'pizza':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <path d="M14 16 C26 12 38 12 50 16 L48 22 C38 18 26 18 16 22 Z" fill="#D35400" />
+          <path d="M16 22 C26 18 38 18 48 22 L32 54 Z" fill="#F1C40F" />
+          <circle cx="28" cy="27" r="4.5" fill="#C0392B" />
+          <circle cx="29" cy="28" r="1.5" fill="#922B21" />
+          <circle cx="38" cy="31" r="4" fill="#C0392B" />
+          <circle cx="39" cy="32" r="1.5" fill="#922B21" />
+          <circle cx="32" cy="41" r="3.5" fill="#C0392B" />
+          <ellipse cx="23" cy="35" rx="3" ry="1.5" fill="#27AE60" transform="rotate(-30 23 35)" />
+          <ellipse cx="36" cy="24" rx="2.5" ry="1.2" fill="#27AE60" transform="rotate(40 36 24)" />
+        </svg>
+      );
+    case 'fanta':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <rect x="29" y="8" width="6" height="5" rx="1.5" fill="#2980B9" />
+          <path d="M29 13 L27 22 L37 22 L35 13 Z" fill="#E67E22" />
+          <rect x="24" y="22" width="16" height="34" rx="4" fill="#E67E22" />
+          <rect x="24" y="30" width="16" height="15" fill="#2980B9" />
+          <circle cx="32" cy="37.5" r="5" fill="#F39C12" />
+          <circle cx="28" cy="48" r="1.2" fill="#FFF" opacity="0.7" />
+          <circle cx="35" cy="51" r="1.5" fill="#FFF" opacity="0.7" />
+          <circle cx="31" cy="26" r="1" fill="#FFF" opacity="0.7" />
+        </svg>
+      );
+    case 'cola':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <rect x="29" y="8" width="6" height="5" rx="1.5" fill="#BDC3C7" />
+          <path d="M29 13 C29 13 25 18 24 24 C23 30 26 34 24 42 C23 48 24 56 25 56 L39 56 C40 56 41 48 40 42 C38 34 41 30 40 24 C39 18 35 13 35 13 Z" fill="#78281F" />
+          <path d="M24.5 32 C26 34 38 34 39.5 32 L39.5 42 C38 44 26 44 24.5 42 Z" fill="#C0392B" />
+          <path d="M25 38 Q32 34 39 37" stroke="#FFF" strokeWidth="1.5" fill="none" />
+        </svg>
+      );
+    case 'water':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <rect x="29" y="8" width="6" height="5" rx="1.5" fill="#3498DB" />
+          <rect x="26" y="13" width="12" height="42" rx="4" fill="#EBF5FB" stroke="#AED6F1" strokeWidth="1.5" />
+          <rect x="26" y="27" width="12" height="14" fill="#5DADE2" />
+          <path d="M32 31 C32 31 35 34.5 35 36.5 C35 38.2 33.7 39.5 32 39.5 C30.3 39.5 29 38.2 29 36.5 C29 34.5 32 31 32 31 Z" fill="#FFF" />
+        </svg>
+      );
+    case 'juice':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <line x1="38" y1="6" x2="30" y2="26" stroke="#E74C3C" strokeWidth="3" strokeLinecap="round" />
+          <line x1="38" y1="6" x2="44" y2="10" stroke="#E74C3C" strokeWidth="3" strokeLinecap="round" />
+          <path d="M20 18 L24 54 L40 54 L44 18 Z" fill="#FAD7A0" stroke="#E59866" strokeWidth="1.5" />
+          <path d="M21.5 24 L24.5 52 L39.5 52 L42.5 24 Z" fill="#F39C12" />
+          <circle cx="44" cy="18" r="7" fill="#E67E22" />
+          <circle cx="44" cy="18" r="5" fill="#F39C12" />
+          <rect x="28" y="32" width="7" height="7" rx="1.5" fill="#FFF" opacity="0.6" transform="rotate(15 31 35)" />
+        </svg>
+      );
+    case 'tea':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <path d="M26 12 Q28 8 26 5" stroke="#BDC3C7" strokeWidth="2" strokeLinecap="round" fill="none" />
+          <path d="M32 10 Q34 6 32 3" stroke="#BDC3C7" strokeWidth="2" strokeLinecap="round" fill="none" />
+          <path d="M38 12 Q40 8 38 5" stroke="#BDC3C7" strokeWidth="2" strokeLinecap="round" fill="none" />
+          <ellipse cx="32" cy="52" rx="22" ry="5" fill="#D5D8DC" />
+          <path d="M18 20 C18 42 46 42 46 20 Z" fill="#2ECC71" />
+          <path d="M19 20 C23 38 41 38 45 20 Z" fill="#F9E79F" />
+          <ellipse cx="32" cy="20" rx="13" ry="3" fill="#D4AC0D" />
+          <circle cx="43" cy="18" r="6" fill="#F4D03F" stroke="#F1C40F" strokeWidth="1" />
+        </svg>
+      );
+    case 'coffee':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <path d="M27 12 Q29 8 27 5" stroke="#BDC3C7" strokeWidth="2" strokeLinecap="round" fill="none" />
+          <path d="M35 12 Q37 8 35 5" stroke="#BDC3C7" strokeWidth="2" strokeLinecap="round" fill="none" />
+          <ellipse cx="32" cy="52" rx="22" ry="5" fill="#BDC3C7" />
+          <path d="M18 20 L22 46 C22 48 42 48 42 46 L46 20 Z" fill="#3E2723" />
+          <path d="M44 24 C50 24 50 36 43 38" stroke="#3E2723" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <ellipse cx="32" cy="21" rx="14" ry="4" fill="#6D4C41" />
+          <path d="M32 23 C30 20 28 21 28 22 C28 23 32 25 32 25 C32 25 36 23 36 22 C36 21 34 20 32 23 Z" fill="#FFF" opacity="0.9" />
+        </svg>
+      );
+    case 'cake':
+      return (
+        <svg viewBox="0 0 64 64" className={className} fill="none">
+          <path d="M14 44 L48 44 L52 26 L26 26 Z" fill="#FADBD8" />
+          <rect x="14" y="42" width="34" height="4" fill="#D35400" rx="1" />
+          <line x1="16" y1="36" x2="50" y2="36" stroke="#F1948A" strokeWidth="2" />
+          <path d="M26 26 L52 26 L42 20 L18 20 Z" fill="#FDFEFE" />
+          <path d="M32 12 C30 15 28 18 32 21 C36 18 34 15 32 12 Z" fill="#E74C3C" />
+          <circle cx="32" cy="11" r="1.5" fill="#27AE60" />
+        </svg>
+      );
+    default:
+      return (
+        <div className={`flex items-center justify-center bg-amber-100 text-amber-800 rounded-xl ${className}`}>
+          <Icon name="coffee-cup" className="w-6 h-6" />
+        </div>
+      );
+  }
+};
+
+// Toast Notifications System
+const ToastContainer = ({ toasts, onDismiss }) => {
+  return (
+    <div className="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none">
+      {toasts.map(toast => {
+        let bg = "bg-white border-amber-500 text-stone-900";
+        let iconName = "check";
+        let iconColor = "text-amber-600 bg-amber-50";
+
+        if (toast.type === 'success') {
+          bg = "bg-white border-emerald-500 text-stone-900";
+          iconName = "check";
+          iconColor = "text-emerald-600 bg-emerald-50";
+        } else if (toast.type === 'error') {
+          bg = "bg-white border-red-500 text-stone-900";
+          iconName = "close";
+          iconColor = "text-red-600 bg-red-50";
+        } else if (toast.type === 'info') {
+          bg = "bg-white border-blue-500 text-stone-900";
+          iconName = "clock";
+          iconColor = "text-blue-600 bg-blue-50";
+        }
+
+        return (
+          <div 
+            key={toast.id}
+            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border-l-4 ${bg} transition-all duration-300 transform translate-y-0 min-w-[280px] max-w-sm`}
+          >
+            <div className={`p-2 rounded-xl ${iconColor}`}>
+              <Icon name={iconName} className="w-5 h-5" />
+            </div>
+            <div className="flex-1 text-sm font-medium">
+              <p className="font-semibold text-stone-800">{toast.title}</p>
+              {toast.message && <p className="text-stone-500 text-xs mt-0.5">{toast.message}</p>}
+            </div>
+            <button 
+              onClick={() => onDismiss(toast.id)}
+              className="text-stone-400 hover:text-stone-600 p-1"
+            >
+              <Icon name="close" className="w-4 h-4" />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// Confirmation Modal
+const ConfirmModal = ({ isOpen, title, message, confirmText = "Ha, tasdiqlayman", cancelText = "Bekor qilish", isDestructive = false, onConfirm, onCancel }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-modal border border-stone-200 transform scale-100 transition-all">
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`p-3 rounded-2xl ${isDestructive ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
+            <Icon name={isDestructive ? 'trash' : 'alert'} className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-stone-900">{title}</h3>
+            <p className="text-xs text-stone-500">Iltimos, amalni tasdiqlang</p>
+          </div>
+        </div>
+        <p className="text-stone-600 text-sm mb-6 leading-relaxed">
+          {message}
+        </p>
+        <div className="flex items-center justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="px-5 py-2.5 rounded-xl font-semibold text-stone-600 hover:bg-stone-100 text-sm transition"
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={onConfirm}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-white text-sm shadow-md transition ${
+              isDestructive 
+                ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20' 
+                : 'bg-cafe-800 hover:bg-cafe-900 shadow-cafe-900/20'
+            }`}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Table Status Badge
+const TableStatusBadge = ({ status }) => {
+  switch (status) {
+    case 'available':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot"></span>
+          Bo‘sh
+        </span>
+      );
+    case 'occupied':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse-dot"></span>
+          Band
+        </span>
+      );
+    case 'payment_pending':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse-dot"></span>
+          To‘lov kutilmoqda
+        </span>
+      );
+    default:
+      return null;
+  }
+};
+
+// Dashboard Stat Card
+const StatCard = ({ title, value, subtext, icon, trend, color = "amber" }) => {
+  const colorMap = {
+    amber: "from-amber-500/10 to-transparent text-amber-700 border-amber-200 bg-amber-500/10",
+    emerald: "from-emerald-500/10 to-transparent text-emerald-700 border-emerald-200 bg-emerald-500/10",
+    indigo: "from-indigo-500/10 to-transparent text-indigo-700 border-indigo-200 bg-indigo-500/10",
+    cafe: "from-cafe-700/10 to-transparent text-cafe-800 border-cafe-200 bg-cafe-700/10",
+    orange: "from-orange-500/10 to-transparent text-orange-700 border-orange-200 bg-orange-500/10",
+  };
+
+  return (
+    <div className="bg-white rounded-3xl p-5 shadow-card border border-stone-200/80 hover:shadow-card-hover transition-all duration-300 relative overflow-hidden group">
+      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${colorMap[color].split(' ')[0]} rounded-bl-full pointer-events-none transition-transform group-hover:scale-110 duration-500`}></div>
+      <div className="flex items-center justify-between mb-3 relative z-10">
+        <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">{title}</span>
+        <div className={`p-2.5 rounded-2xl ${colorMap[color].split(' ').slice(1).join(' ')}`}>
+          <Icon name={icon} className="w-5 h-5" />
+        </div>
+      </div>
+      <div className="relative z-10">
+        <h4 className="text-2xl font-extrabold text-stone-900 tracking-tight font-mono">{value}</h4>
+        {subtext && (
+          <p className="text-xs text-stone-500 mt-1 flex items-center gap-1.5 font-medium">
+            {trend && <span className="text-emerald-600 font-bold">{trend}</span>}
+            {subtext}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+// POS Order Drawer / Full Order Workspace
+const POSDrawer = ({ 
+  isOpen, 
+  table, 
+  products, 
+  onClose, 
+  onAddItem, 
+  onUpdateQuantity, 
+  onRemoveItem, 
+  onProceedToPayment, 
+  onChangeStatus, 
+  onClearTable, 
+  onTransferTable,
+  tablesList,
+  serviceFeePercent = 0
+}) => {
+  const [selectedCategory, setSelectedCategory] = React.useState('all');
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [transferTargetId, setTransferTargetId] = React.useState('');
+  const [isTransferring, setIsTransferring] = React.useState(false);
+
+  if (!isOpen || !table) return null;
+
+  // Filter products by category and search
+  const filteredProducts = products.filter(product => {
+    const matchesCat = selectedCategory === 'all' || product.category === selectedCategory;
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
+
+  // Calculate order totals
+  const subtotal = (table.order || []).reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const serviceAmount = Math.round(subtotal * (serviceFeePercent / 100));
+  const grandTotal = subtotal + serviceAmount;
+
+  // Available destination tables for transfer
+  const availableTables = (tablesList || []).filter(t => t.id !== table.id && t.status === 'available');
+
+  const categories = [
+    { id: 'all', name: 'Barchasi', icon: 'menu' },
+    { id: 'food', name: 'Taomlar', icon: 'coffee-cup' },
+    { id: 'drinks', name: 'Ichimliklar', icon: 'coffee-cup' },
+    { id: 'coffee', name: 'Qahva & Shirinlik', icon: 'coffee-cup' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-stone-950/70 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[#FAF7F2] rounded-3xl w-full max-w-6xl h-[92vh] max-h-[850px] shadow-2xl border border-stone-200/80 flex flex-col overflow-hidden">
+        
+        {/* Drawer Header */}
+        <div className="bg-white px-6 py-4 border-b border-stone-200 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-cafe-800 text-amber-400 flex items-center justify-center font-bold text-lg shadow-md">
+              {table.id}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-extrabold text-stone-900">{table.name} — Buyurtma paneli</h2>
+                <TableStatusBadge status={table.status} />
+              </div>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Ofitsiant: <span className="font-semibold text-stone-700">{table.waiter || "Alisher"}</span>
+                {table.openedAt && <span className="ml-2">| Ochilgan: <b className="text-stone-700">{table.openedAt}</b></span>}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Status Quick Changer */}
+            <select
+              value={table.status}
+              onChange={(e) => onChangeStatus(table.id, e.target.value)}
+              className="bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-xl px-3 py-2 text-xs font-semibold text-stone-800 outline-none cursor-pointer transition"
+            >
+              <option value="available">Holat: Bo‘sh</option>
+              <option value="occupied">Holat: Band</option>
+              <option value="payment_pending">Holat: To‘lov kutilmoqda</option>
+            </select>
+
+            {/* Transfer table toggle */}
+            {table.order && table.order.length > 0 && (
+              <button
+                onClick={() => setIsTransferring(!isTransferring)}
+                className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition ${
+                  isTransferring ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-100'
+                }`}
+                title="Stolni ko'chirish"
+              >
+                <Icon name="move" className="w-4 h-4" />
+                <span className="hidden sm:inline">Ko‘chirish</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
+              title="Yopish"
+            >
+              <Icon name="close" className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+
+        {/* Optional Transfer Bar */}
+        {isTransferring && (
+          <div className="bg-amber-50 px-6 py-3 border-b border-amber-200 flex flex-wrap items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-2 text-amber-900">
+              <Icon name="move" className="w-5 h-5 text-amber-700" />
+              <span className="font-semibold">Ushbu stol buyurtmasini boshqa bo‘sh stolga ko‘chirish:</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={transferTargetId}
+                onChange={(e) => setTransferTargetId(e.target.value)}
+                className="bg-white border border-amber-300 rounded-xl px-3 py-1.5 text-xs font-semibold text-stone-800 outline-none"
+              >
+                <option value="">Bo‘sh stolni tanlang...</option>
+                {availableTables.map(t => (
+                  <option key={t.id} value={t.id}>{t.name} (Bo‘sh)</option>
+                ))}
+              </select>
+              <button
+                disabled={!transferTargetId}
+                onClick={() => {
+                  if (transferTargetId) {
+                    onTransferTable(table.id, parseInt(transferTargetId));
+                    setIsTransferring(false);
+                    setTransferTargetId('');
+                  }
+                }}
+                className="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold text-xs shadow-sm transition"
+              >
+                Ko‘chirishni tasdiqlash
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Drawer Body (Split Screen) */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          
+          {/* LEFT: Product Catalog & Quick Add */}
+          <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-stone-200 bg-[#FAF7F2] p-4 md:p-6 overflow-hidden">
+            {/* Search & Category Pills */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <div className="relative flex-1">
+                <Icon name="search" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Taom yoki ichimlik qidirish..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-2xl text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-sm"
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                  >
+                    <Icon name="close" className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                {categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                      selectedCategory === cat.id
+                        ? 'bg-cafe-800 text-amber-300 shadow-md'
+                        : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200/80'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-3 gap-3">
+                {filteredProducts.map(product => {
+                  const inCartItem = (table.order || []).find(i => i.id === product.id);
+                  const isOutOfStock = product.inStock === false;
+
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => !isOutOfStock && onAddItem(table.id, product)}
+                      className={`relative bg-white rounded-2xl p-3.5 border transition-all duration-200 flex flex-col justify-between select-none ${
+                        isOutOfStock
+                          ? 'opacity-50 cursor-not-allowed border-stone-200 bg-stone-50'
+                          : inCartItem
+                          ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md cursor-pointer hover:shadow-lg'
+                          : 'border-stone-200 hover:border-amber-400 shadow-sm hover:shadow-md cursor-pointer group'
+                      }`}
+                    >
+                      {/* Quantity in cart badge */}
+                      {inCartItem && (
+                        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-amber-500 text-white font-extrabold text-[11px] shadow-sm animate-scale-up">
+                          {inCartItem.quantity}x
+                        </div>
+                      )}
+
+                      <div className="flex flex-col items-center text-center my-1">
+                        <div className="w-14 h-14 mb-2 flex items-center justify-center transform group-hover:scale-110 transition duration-300">
+                          <FoodIcon name={product.icon} className="w-14 h-14" />
+                        </div>
+                        <h4 className="font-bold text-stone-900 text-sm line-clamp-1">{product.name}</h4>
+                        <span className="text-[11px] text-stone-400 capitalize">{product.category === 'food' ? 'Taom' : product.category === 'drinks' ? 'Ichimlik' : 'Desert'}</span>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between">
+                        <span className="font-mono font-bold text-xs text-cafe-800">
+                          {formatUZS(product.price)}
+                        </span>
+                        <button
+                          disabled={isOutOfStock}
+                          className="w-7 h-7 rounded-xl bg-amber-50 hover:bg-amber-500 text-amber-700 hover:text-white flex items-center justify-center transition shadow-sm"
+                        >
+                          <Icon name="plus" className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {filteredProducts.length === 0 && (
+                <div className="text-center py-16 text-stone-400">
+                  <Icon name="search" className="w-12 h-12 mx-auto mb-2 opacity-40" />
+                  <p className="font-medium text-sm">Bunday mahsulot topilmadi</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: Current Active Order Ticket */}
+          <div className="w-full md:w-[380px] lg:w-[420px] bg-white flex flex-col h-full border-t md:border-t-0 shadow-lg">
+            
+            {/* Ticket Header */}
+            <div className="p-4 border-b border-stone-200 bg-stone-50/70 flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-stone-900 text-base">Joriy buyurtma</h3>
+                <p className="text-xs text-stone-500">
+                  Jami pozitsiyalar: <b className="text-stone-800">{(table.order || []).reduce((a, b) => a + b.quantity, 0)} ta</b>
+                </p>
+              </div>
+
+              {table.order && table.order.length > 0 && (
+                <button
+                  onClick={() => onClearTable(table.id)}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 transition flex items-center gap-1"
+                  title="Buyurtmani tozalash"
+                >
+                  <Icon name="trash" className="w-3.5 h-3.5" />
+                  <span>Tozalash</span>
+                </button>
+              )}
+            </div>
+
+            {/* Order Items List */}
+            <div className="flex-1 overflow-y-auto p-4 divide-y divide-stone-100">
+              {table.order && table.order.length > 0 ? (
+                table.order.map((item) => (
+                  <div key={item.id} className="py-3 flex items-center justify-between gap-3 group">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center shrink-0 border border-stone-200/60">
+                        <FoodIcon name={item.icon || 'hotdog'} className="w-8 h-8" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="font-bold text-stone-800 text-sm truncate">{item.name}</h5>
+                        <p className="text-xs text-stone-400 font-mono">
+                          {formatUZS(item.price)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Quantity Stepper */}
+                    <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl">
+                      <button
+                        onClick={() => onUpdateQuantity(table.id, item.id, item.quantity - 1)}
+                        className="w-6 h-6 rounded-lg bg-white hover:bg-stone-200 text-stone-700 flex items-center justify-center shadow-xs transition"
+                      >
+                        <Icon name="minus" className="w-3 h-3" />
+                      </button>
+                      <span className="w-7 text-center font-bold text-xs font-mono text-stone-800">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => onUpdateQuantity(table.id, item.id, item.quantity + 1)}
+                        className="w-6 h-6 rounded-lg bg-white hover:bg-stone-200 text-stone-700 flex items-center justify-center shadow-xs transition"
+                      >
+                        <Icon name="plus" className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {/* Line Total & Remove */}
+                    <div className="text-right pl-2">
+                      <div className="font-mono font-bold text-sm text-stone-900 whitespace-nowrap">
+                        {formatUZS(item.price * item.quantity)}
+                      </div>
+                      <button
+                        onClick={() => onRemoveItem(table.id, item.id)}
+                        className="text-[11px] text-stone-400 hover:text-red-600 transition"
+                      >
+                        O‘chirish
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-stone-400">
+                  <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mb-3">
+                    <Icon name="menu" className="w-8 h-8 opacity-40 text-stone-600" />
+                  </div>
+                  <h4 className="font-bold text-stone-700 text-sm">Buyurtma hali bo‘sh</h4>
+                  <p className="text-xs text-stone-400 mt-1 max-w-[200px]">
+                    Chap tomondagi menyudan taom yoki ichimlik tanlab ustiga bosing
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Calculations & Checkout Bar */}
+            <div className="p-4 bg-stone-50 border-t border-stone-200">
+              <div className="space-y-1.5 mb-4 text-xs">
+                <div className="flex justify-between text-stone-500 font-medium">
+                  <span>Oraliq summa:</span>
+                  <span className="font-mono font-semibold text-stone-800">{formatUZS(subtotal)}</span>
+                </div>
+                {serviceFeePercent > 0 && (
+                  <div className="flex justify-between text-stone-500 font-medium">
+                    <span>Xizmat haqi ({serviceFeePercent}%):</span>
+                    <span className="font-mono font-semibold text-stone-800">{formatUZS(serviceAmount)}</span>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-stone-200 flex justify-between items-baseline">
+                  <span className="text-base font-extrabold text-stone-900">Jami to‘lov:</span>
+                  <span className="text-xl font-extrabold text-cafe-900 font-mono text-amber-700">
+                    {formatUZS(grandTotal)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  disabled={!table.order || table.order.length === 0}
+                  onClick={() => onChangeStatus(table.id, 'payment_pending')}
+                  className="py-3 px-3 rounded-2xl border border-stone-300 hover:bg-stone-200/70 text-stone-700 text-xs font-bold transition disabled:opacity-40"
+                >
+                  To‘lov kutilmoqda
+                </button>
+
+                <button
+                  disabled={!table.order || table.order.length === 0}
+                  onClick={() => onProceedToPayment(table)}
+                  className="py-3 px-4 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-sm shadow-lg shadow-amber-600/30 flex items-center justify-center gap-2 transition disabled:opacity-40"
+                >
+                  <Icon name="cash" className="w-4 h-4" />
+                  <span>To‘lovga o‘tish</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+
+// Payment Checkout Modal
+const PaymentModal = ({
+  isOpen,
+  table,
+  settings,
+  onClose,
+  onConfirmPayment
+}) => {
+  if (!isOpen || !table) return null;
+
+  const [paymentMethod, setPaymentMethod] = React.useState('Naqd pul'); // 'Naqd pul' or 'Plastik karta'
+  const subtotal = (table.order || []).reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const serviceAmount = Math.round(subtotal * ((settings.serviceFeePercent || 0) / 100));
+  const grandTotal = subtotal + serviceAmount;
+
+  const [cashReceived, setCashReceived] = React.useState(grandTotal);
+
+  // When grandTotal changes or modal opens, reset cashReceived
+  React.useEffect(() => {
+    setCashReceived(grandTotal);
+  }, [grandTotal]);
+
+  const change = Math.max(0, cashReceived - grandTotal);
+  const isCashShort = paymentMethod === 'Naqd pul' && cashReceived < grandTotal;
+
+  // Preset cash options
+  const presetAmounts = [
+    grandTotal,
+    Math.ceil(grandTotal / 10000) * 10000,
+    Math.ceil(grandTotal / 50000) * 50000,
+    100000,
+    200000,
+    500000
+  ].filter((val, idx, self) => val >= grandTotal && self.indexOf(val) === idx).slice(0, 5);
+
+  const handlePay = () => {
+    if (isCashShort) return;
+    onConfirmPayment({
+      table,
+      paymentMethod,
+      cashReceived: paymentMethod === 'Naqd pul' ? cashReceived : grandTotal,
+      cashChange: paymentMethod === 'Naqd pul' ? change : 0,
+      subtotal,
+      serviceAmount,
+      grandTotal
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-modal border border-stone-200 overflow-hidden">
+        
+        {/* Modal Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center">
+              <Icon name="cash" className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-extrabold text-stone-900">To‘lovni qabul qilish</h3>
+              <p className="text-xs text-stone-500">{table.name} — {table.order?.length || 0} xil mahsulot</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 text-stone-400 hover:text-stone-700">
+            <Icon name="close" className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Bill Total Banner */}
+        <div className="my-5 p-4 rounded-2xl bg-cafe-50 border border-amber-200 text-center">
+          <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Jami to‘lanishi kerak bo‘lgan summa</span>
+          <div className="text-3xl font-extrabold text-cafe-900 font-mono mt-1 text-amber-700">
+            {formatUZS(grandTotal)}
+          </div>
+        </div>
+
+        {/* Payment Method Selector */}
+        <div className="mb-5">
+          <label className="block text-xs font-bold text-stone-600 mb-2 uppercase">To‘lov turini tanlang</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setPaymentMethod('Naqd pul')}
+              className={`p-3.5 rounded-2xl border-2 font-bold text-sm flex items-center justify-center gap-2.5 transition ${
+                paymentMethod === 'Naqd pul'
+                  ? 'border-amber-600 bg-amber-50/60 text-amber-900 shadow-sm'
+                  : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              <Icon name="cash" className="w-5 h-5" />
+              <span>Naqd pul</span>
+            </button>
+            <button
+              onClick={() => setPaymentMethod('Plastik karta')}
+              className={`p-3.5 rounded-2xl border-2 font-bold text-sm flex items-center justify-center gap-2.5 transition ${
+                paymentMethod === 'Plastik karta'
+                  ? 'border-amber-600 bg-amber-50/60 text-amber-900 shadow-sm'
+                  : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              <Icon name="card" className="w-5 h-5" />
+              <span>Plastik karta</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Cash Calculator Section (If Cash Selected) */}
+        {paymentMethod === 'Naqd pul' && (
+          <div className="mb-5 p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1">Mijoz bergan summa (so‘m):</label>
+              <input
+                type="number"
+                value={cashReceived}
+                onChange={(e) => setCashReceived(Number(e.target.value) || 0)}
+                className="w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-xl text-lg font-mono font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+
+            {/* Quick preset buttons */}
+            <div className="flex flex-wrap gap-1.5">
+              {presetAmounts.map((amt, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCashReceived(amt)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition ${
+                    cashReceived === amt ? 'bg-amber-600 text-white' : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
+                  }`}
+                >
+                  {amt === grandTotal ? 'Aniq summa' : formatUZS(amt).replace(" so'm", '')}
+                </button>
+              ))}
+            </div>
+
+            {/* Change Display */}
+            <div className="pt-2 border-t border-stone-200 flex items-center justify-between">
+              <span className="text-xs font-bold text-stone-600">Qaytim miqdori:</span>
+              {isCashShort ? (
+                <span className="text-xs font-bold text-red-600 font-mono">
+                  Yetarli emas (-{formatUZS(grandTotal - cashReceived)})
+                </span>
+              ) : (
+                <span className="text-base font-extrabold text-emerald-600 font-mono">
+                  {formatUZS(change)}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Card info if card selected */}
+        {paymentMethod === 'Plastik karta' && (
+          <div className="mb-5 p-4 rounded-2xl bg-stone-50 border border-stone-200 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-100 text-blue-700">
+              <Icon name="card" className="w-6 h-6" />
+            </div>
+            <div>
+              <h5 className="font-bold text-sm text-stone-800">Terminal orqali to‘lov</h5>
+              <p className="text-xs text-stone-500">Uzcard, Humo, Visa yoki Mastercard kartasini terminalga ulang</p>
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 px-4 rounded-2xl border border-stone-300 font-bold text-stone-700 hover:bg-stone-100 text-sm transition"
+          >
+            Bekor qilish
+          </button>
+          <button
+            disabled={isCashShort}
+            onClick={handlePay}
+            className="flex-1 py-3 px-4 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-sm shadow-lg shadow-amber-600/30 flex items-center justify-center gap-2 transition disabled:opacity-40"
+          >
+            <Icon name="check" className="w-5 h-5" />
+            <span>To‘lovni tasdiqlash</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+// Thermal Printable Receipt Modal
+const ReceiptModal = ({ isOpen, order, settings, onClose }) => {
+  if (!isOpen || !order) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-modal border border-stone-200 flex flex-col max-h-[90vh]">
+        
+        {/* Receipt Action Buttons (No-print) */}
+        <div className="flex items-center justify-between pb-3 border-b border-stone-100 no-print">
+          <div className="flex items-center gap-2 text-stone-800 font-bold text-sm">
+            <Icon name="printer" className="w-5 h-5 text-amber-600" />
+            <span>Kassa cheki</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.print()}
+              className="px-3.5 py-1.5 rounded-xl bg-cafe-800 hover:bg-cafe-900 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
+            >
+              <Icon name="printer" className="w-3.5 h-3.5" />
+              <span>Chop etish</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100"
+            >
+              <Icon name="close" className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Printable Area - Thermal Paper Look */}
+        <div className="flex-1 overflow-y-auto my-3 p-4 bg-stone-50/60 rounded-2xl border border-stone-200 font-mono text-xs text-stone-800" id="printable-receipt-area">
+          
+          {/* Cafe Header */}
+          <div className="text-center pb-3 border-b border-dashed border-stone-300">
+            <h2 className="text-base font-extrabold tracking-wider uppercase text-stone-900">{settings.cafeName}</h2>
+            {settings.cafeTagline && <p className="text-[10px] text-stone-500">{settings.cafeTagline}</p>}
+            <p className="text-[11px] text-stone-600 mt-1">{settings.address}</p>
+            <p className="text-[11px] text-stone-600">Tel: {settings.phone}</p>
+          </div>
+
+          {/* Receipt Metadata */}
+          <div className="py-2.5 border-b border-dashed border-stone-300 space-y-1 text-[11px]">
+            <div className="flex justify-between">
+              <span>Chek №:</span>
+              <span className="font-bold text-stone-900">{order.id}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Stol:</span>
+              <span className="font-bold text-stone-900">{order.tableName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Sana & Vaqt:</span>
+              <span>{order.formattedDate}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Ofitsiant:</span>
+              <span>{order.waiter || "Alisher"}</span>
+            </div>
+          </div>
+
+          {/* Items Table */}
+          <div className="py-3 border-b border-dashed border-stone-300">
+            <div className="flex justify-between font-bold text-[11px] pb-1 border-b border-stone-200 mb-1.5">
+              <span>Mahsulot</span>
+              <span>Jami</span>
+            </div>
+            <div className="space-y-1.5">
+              {(order.items || []).map((item, idx) => (
+                <div key={idx} className="flex justify-between items-start text-[11px]">
+                  <div>
+                    <div className="font-semibold text-stone-900">{item.name}</div>
+                    <div className="text-[10px] text-stone-500">
+                      {item.quantity} x {formatUZS(item.price)}
+                    </div>
+                  </div>
+                  <span className="font-bold text-stone-900 whitespace-nowrap">
+                    {formatUZS(item.price * item.quantity)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Financial Breakdown */}
+          <div className="py-3 border-b border-dashed border-stone-300 space-y-1 text-[11px]">
+            <div className="flex justify-between text-stone-600">
+              <span>Oraliq summa:</span>
+              <span>{formatUZS(order.subtotal || order.total)}</span>
+            </div>
+            {order.serviceCharge > 0 && (
+              <div className="flex justify-between text-stone-600">
+                <span>Xizmat haqi:</span>
+                <span>{formatUZS(order.serviceCharge)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-baseline text-sm font-extrabold text-stone-900 pt-1.5 border-t border-stone-200">
+              <span>JAMI TO‘LOV:</span>
+              <span className="text-base text-amber-800">{formatUZS(order.total)}</span>
+            </div>
+          </div>
+
+          {/* Payment Details */}
+          <div className="py-2.5 border-b border-dashed border-stone-300 space-y-1 text-[11px]">
+            <div className="flex justify-between">
+              <span>To‘lov usuli:</span>
+              <span className="font-bold">{order.paymentMethod}</span>
+            </div>
+            {order.paymentMethod === 'Naqd pul' && (
+              <>
+                <div className="flex justify-between text-stone-600">
+                  <span>Mijoz berdi:</span>
+                  <span>{formatUZS(order.cashReceived || order.total)}</span>
+                </div>
+                <div className="flex justify-between text-stone-600">
+                  <span>Qaytim:</span>
+                  <span className="font-bold text-emerald-700">{formatUZS(order.cashChange || 0)}</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Barcode Visual */}
+          <div className="pt-4 text-center">
+            <div className="inline-block p-1 bg-white rounded border border-stone-300">
+              <div className="h-8 w-44 flex items-center justify-between px-2 bg-stone-900 text-white text-[8px] font-mono tracking-widest">
+                |||| | ||||| || |||| ||| |||||
+              </div>
+            </div>
+            <p className="text-[10px] text-stone-500 mt-2 font-sans font-medium">{settings.receiptNote}</p>
+          </div>
+
+        </div>
+
+        {/* Modal Footer */}
+        <div className="pt-2 no-print">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 text-sm transition"
+          >
+            Yopish
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+
+// 1. DASHBOARD VIEW
+const DashboardView = ({ 
+  tables, 
+  products, 
+  orderHistory, 
+  onSelectTable, 
+  onOpenReceipt,
+  onNavigateTab
+}) => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayOrders = orderHistory.filter(o => o.dateOnly === todayStr || (o.timestamp && o.timestamp.startsWith(todayStr)));
+
+  const totalTables = tables.length;
+  const occupiedCount = tables.filter(t => t.status === 'occupied').length;
+  const pendingCount = tables.filter(t => t.status === 'payment_pending').length;
+  const availableCount = tables.filter(t => t.status === 'available').length;
+
+  const todaySales = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const todayOrdersCount = todayOrders.length;
+  const avgCheck = todayOrdersCount > 0 ? Math.round(todaySales / todayOrdersCount) : 0;
+
+  // Active current ongoing revenue on active tables
+  const activeUnpaidSales = tables.reduce((acc, t) => {
+    return acc + (t.order || []).reduce((s, item) => s + (item.price * item.quantity), 0);
+  }, 0);
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Welcome Banner */}
+      <div className="bg-gradient-to-r from-cafe-900 via-cafe-800 to-amber-900 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="relative z-10 max-w-xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold mb-3">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            Bugungi smena faol
+          </div>
+          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+            Xush kelibsiz! Kafe boshqaruv tizimi
+          </h2>
+          <p className="text-stone-300 text-sm mt-2 leading-relaxed">
+            Hozirda <b className="text-amber-300">{occupiedCount + pendingCount} ta</b> stolda mijozlar xizmat ko‘rmoqda. 
+            Bugungi kassa tushumi: <b className="text-white font-mono">{formatUZS(todaySales)}</b>
+          </p>
+        </div>
+
+        <div className="relative z-10 flex flex-wrap gap-3">
+          <button
+            onClick={() => onNavigateTab('tables')}
+            className="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-cafe-950 font-extrabold text-sm shadow-lg shadow-amber-500/30 flex items-center gap-2 transition"
+          >
+            <Icon name="tables" className="w-4 h-4" />
+            <span>Stollarni boshqarish</span>
+          </button>
+          <button
+            onClick={() => onNavigateTab('menu')}
+            className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm backdrop-blur-sm border border-white/20 flex items-center gap-2 transition"
+          >
+            <Icon name="menu" className="w-4 h-4" />
+            <span>Menyuni ko‘rish</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 6 Key Stat Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
+        <StatCard
+          title="Jami stollar"
+          value={`${totalTables} ta`}
+          subtext="Doimiy sig‘im"
+          icon="tables"
+          color="cafe"
+        />
+        <StatCard
+          title="Band stollar"
+          value={`${occupiedCount} ta`}
+          subtext={`${Math.round((occupiedCount / totalTables) * 100)}% bandlik`}
+          icon="user"
+          color="amber"
+        />
+        <StatCard
+          title="Bo‘sh stollar"
+          value={`${availableCount} ta`}
+          subtext="Mijoz qabuliga tayyor"
+          icon="check"
+          color="emerald"
+        />
+        <StatCard
+          title="Bugungi jami savdo"
+          value={formatUZS(todaySales)}
+          subtext="Bajarilgan buyurtmalar"
+          icon="cash"
+          color="amber"
+        />
+        <StatCard
+          title="Bugungi buyurtmalar"
+          value={`${todayOrdersCount} ta`}
+          subtext="Kassadan o‘tgan"
+          icon="history"
+          color="indigo"
+        />
+        <StatCard
+          title="O‘rtacha chek"
+          value={formatUZS(avgCheck)}
+          subtext="Bitta buyurtmaga"
+          icon="stats"
+          color="orange"
+        />
+      </div>
+
+      {/* Real-time Tables Quick Matrix */}
+      <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div>
+            <h3 className="text-lg font-extrabold text-stone-900">Stollar holati (1–10)</h3>
+            <p className="text-xs text-stone-500">Ixtiyoriy stol ustiga bosib, tezkor buyurtma paneli yoki hisobni oching</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Bo‘sh: {availableCount}
+            </span>
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span> Band: {occupiedCount}
+            </span>
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span> Kutilmoqda: {pendingCount}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
+          {tables.map(table => {
+            const tableTotal = (table.order || []).reduce((s, i) => s + (i.price * i.quantity), 0);
+            const itemsCount = (table.order || []).reduce((s, i) => s + i.quantity, 0);
+
+            let borderClass = "border-stone-200 hover:border-emerald-400 bg-stone-50/50";
+            if (table.status === 'occupied') {
+              borderClass = "border-amber-400 ring-1 ring-amber-400/40 bg-amber-50/40";
+            } else if (table.status === 'payment_pending') {
+              borderClass = "border-purple-400 ring-1 ring-purple-400/40 bg-purple-50/40";
+            }
+
+            return (
+              <div
+                key={table.id}
+                onClick={() => onSelectTable(table.id)}
+                className={`p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer hover:shadow-md flex flex-col justify-between ${borderClass}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-cafe-800 text-amber-300 font-extrabold flex items-center justify-center text-sm shadow-sm">
+                    {table.id}
+                  </div>
+                  <TableStatusBadge status={table.status} />
+                </div>
+
+                <div className="my-2">
+                  <h5 className="font-extrabold text-stone-900 text-sm">{table.name}</h5>
+                  {table.status !== 'available' ? (
+                    <div className="mt-1">
+                      <p className="text-[11px] text-stone-500">{itemsCount} ta mahsulot</p>
+                      <p className="text-xs font-bold font-mono text-cafe-900 text-amber-800">
+                        {formatUZS(tableTotal)}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-emerald-600 font-medium mt-1">Buyurtma uchun bo‘sh</p>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-[11px] font-semibold text-stone-600">
+                  <span>{table.status === 'available' ? '+ Ochish' : 'Ko‘rish'}</span>
+                  <Icon name="arrow-right" className="w-3.5 h-3.5" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recent Orders List */}
+      <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-extrabold text-stone-900">Oxirgi yakunlangan buyurtmalar</h3>
+            <p className="text-xs text-stone-500">Bugun amalga oshirilgan to‘lovlar ro‘yxati</p>
+          </div>
+          <button
+            onClick={() => onNavigateTab('history')}
+            className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
+          >
+            <span>Barchasini ko‘rish</span>
+            <Icon name="arrow-right" className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-stone-200 text-stone-400 font-semibold">
+                <th className="py-2.5 px-3">Chek №</th>
+                <th className="py-2.5 px-3">Stol</th>
+                <th className="py-2.5 px-3">Mahsulotlar</th>
+                <th className="py-2.5 px-3">To‘lov turi</th>
+                <th className="py-2.5 px-3">Vaqt</th>
+                <th className="py-2.5 px-3 text-right">Summa</th>
+                <th className="py-2.5 px-3 text-center">Amal</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100 text-stone-700">
+              {todayOrders.slice(0, 5).map(order => (
+                <tr key={order.id} className="hover:bg-stone-50/80 transition">
+                  <td className="py-3 px-3 font-mono font-bold text-stone-900">{order.id}</td>
+                  <td className="py-3 px-3 font-semibold text-stone-800">{order.tableName}</td>
+                  <td className="py-3 px-3 text-stone-600 max-w-xs truncate">
+                    {(order.items || []).map(i => `${i.name} × ${i.quantity}`).join(', ')}
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold text-[11px] ${
+                      order.paymentMethod === 'Naqd pul' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
+                    }`}>
+                      {order.paymentMethod}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-stone-500">{order.formattedDate}</td>
+                  <td className="py-3 px-3 font-mono font-bold text-stone-900 text-right">
+                    {formatUZS(order.total)}
+                  </td>
+                  <td className="py-3 px-3 text-center">
+                    <button
+                      onClick={() => onOpenReceipt(order)}
+                      className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold transition"
+                      title="Chekni ko'rish"
+                    >
+                      Chek
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {todayOrders.length === 0 && (
+            <div className="text-center py-8 text-stone-400 text-sm">
+              Bugun hali buyurtmalar yakunlanmagan
+            </div>
+          )}
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+// 2. TABLES MANAGEMENT VIEW
+const TablesView = ({
+  tables,
+  onSelectTable,
+  onChangeStatus,
+  onProceedToPayment,
+  onClearTable
+}) => {
+  const [statusFilter, setStatusFilter] = React.useState('all');
+
+  const filteredTables = tables.filter(t => {
+    if (statusFilter === 'all') return true;
+    return t.status === statusFilter;
+  });
+
+  const availableCount = tables.filter(t => t.status === 'available').length;
+  const occupiedCount = tables.filter(t => t.status === 'occupied').length;
+  const pendingCount = tables.filter(t => t.status === 'payment_pending').length;
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Header and Filter Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-stone-900">Stollar boshqaruvi (10 ta stol)</h2>
+          <p className="text-xs text-stone-500 mt-1">Har bir stolning joriy buyurtmasi, holati va to‘lov summasi</p>
+        </div>
+
+        {/* Status Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition ${
+              statusFilter === 'all'
+                ? 'bg-cafe-800 text-amber-300 shadow-md'
+                : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+            }`}
+          >
+            Barchasi (10)
+          </button>
+          <button
+            onClick={() => setStatusFilter('available')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition ${
+              statusFilter === 'available'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+            }`}
+          >
+            Bo‘sh ({availableCount})
+          </button>
+          <button
+            onClick={() => setStatusFilter('occupied')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition ${
+              statusFilter === 'occupied'
+                ? 'bg-amber-600 text-white shadow-md'
+                : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+            }`}
+          >
+            Band ({occupiedCount})
+          </button>
+          <button
+            onClick={() => setStatusFilter('payment_pending')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition ${
+              statusFilter === 'payment_pending'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+            }`}
+          >
+            To‘lov kutilmoqda ({pendingCount})
+          </button>
+        </div>
+      </div>
+
+      {/* 10 Tables Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {filteredTables.map(table => {
+          const totalBill = (table.order || []).reduce((acc, i) => acc + (i.price * i.quantity), 0);
+          const totalItems = (table.order || []).reduce((acc, i) => acc + i.quantity, 0);
+
+          let cardBorder = "border-stone-200 hover:border-emerald-400 bg-white";
+          let badgeBg = "bg-emerald-50 text-emerald-700";
+
+          if (table.status === 'occupied') {
+            cardBorder = "border-amber-300 ring-2 ring-amber-400/20 bg-amber-50/20";
+            badgeBg = "bg-amber-100 text-amber-900";
+          } else if (table.status === 'payment_pending') {
+            cardBorder = "border-purple-300 ring-2 ring-purple-400/20 bg-purple-50/20";
+            badgeBg = "bg-purple-100 text-purple-900";
+          }
+
+          return (
+            <div
+              key={table.id}
+              className={`rounded-3xl p-5 border-2 shadow-card hover:shadow-card-hover transition-all duration-300 flex flex-col justify-between ${cardBorder}`}
+            >
+              {/* Card Top */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-2xl bg-cafe-900 text-amber-400 flex items-center justify-center font-extrabold text-base shadow-sm">
+                      {table.id}
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-stone-900 text-base">{table.name}</h4>
+                      <p className="text-[11px] text-stone-400">Ofitsiant: {table.waiter || "Alisher"}</p>
+                    </div>
+                  </div>
+                  <TableStatusBadge status={table.status} />
+                </div>
+
+                {/* Table Content */}
+                {table.status !== 'available' && table.order && table.order.length > 0 ? (
+                  <div className="my-3 p-3 bg-white rounded-2xl border border-stone-200/80 space-y-2">
+                    <div className="flex justify-between text-xs text-stone-500 font-medium">
+                      <span>Joriy buyurtma ({totalItems} ta):</span>
+                      {table.openedAt && <span>{table.openedAt}</span>}
+                    </div>
+                    <ul className="space-y-1 text-xs text-stone-700 max-h-24 overflow-y-auto pr-1">
+                      {table.order.map((item, idx) => (
+                        <li key={idx} className="flex justify-between items-center text-[11px]">
+                          <span className="truncate max-w-[120px] font-medium">{item.name}</span>
+                          <span className="font-mono text-stone-500 font-semibold">{item.quantity} × {formatUZS(item.price).replace(" so'm", '')}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="pt-2 border-t border-stone-100 flex justify-between items-baseline">
+                      <span className="text-xs font-bold text-stone-600">Jami hisob:</span>
+                      <span className="text-sm font-extrabold font-mono text-amber-700">
+                        {formatUZS(totalBill)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="my-4 p-5 rounded-2xl bg-emerald-50/50 border border-emerald-100 text-center flex flex-col items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2">
+                      <Icon name="check" className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold text-emerald-800">Stol bo‘sh</p>
+                    <p className="text-[11px] text-emerald-600 mt-0.5">Yangi mijozlarni qabul qilishga tayyor</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-stone-200/70 space-y-2">
+                {table.status === 'available' ? (
+                  <button
+                    onClick={() => onSelectTable(table.id)}
+                    className="w-full py-2.5 px-3 rounded-2xl bg-cafe-800 hover:bg-cafe-900 text-amber-300 font-bold text-xs shadow-md shadow-cafe-900/10 flex items-center justify-center gap-1.5 transition"
+                  >
+                    <Icon name="plus" className="w-4 h-4" />
+                    <span>Buyurtma ochish</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => onSelectTable(table.id)}
+                      className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-cafe-950 font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition"
+                    >
+                      <Icon name="menu" className="w-3.5 h-3.5" />
+                      <span>Buyurtmaga qo‘shish / Ko‘rish</span>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onProceedToPayment(table)}
+                        className="flex-1 py-2 px-2.5 rounded-xl bg-cafe-800 hover:bg-cafe-900 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1 transition"
+                      >
+                        <Icon name="cash" className="w-3.5 h-3.5" />
+                        <span>To‘lov</span>
+                      </button>
+                      <button
+                        onClick={() => onClearTable(table.id)}
+                        className="p-2 rounded-xl text-stone-400 hover:text-red-600 hover:bg-red-50 border border-stone-200 transition"
+                        title="Stolni tozalash"
+                      >
+                        <Icon name="trash" className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+            </div>
+          );
+        })}
+      </div>
+
+    </div>
+  );
+};
+
+// 3. FOOD AND DRINK MENU VIEW
+const MenuView = ({ products, onSelectProduct, tables }) => {
+  const [selectedCategory, setSelectedCategory] = React.useState('all');
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const filteredProducts = products.filter(p => {
+    const matchesCat = selectedCategory === 'all' || p.category === selectedCategory;
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
+
+  const categories = [
+    { id: 'all', name: 'Barchasi', count: products.length },
+    { id: 'food', name: 'Taomlar', count: products.filter(p => p.category === 'food').length },
+    { id: 'drinks', name: 'Ichimliklar', count: products.filter(p => p.category === 'drinks').length },
+    { id: 'coffee', name: 'Qahva & Shirinliklar', count: products.filter(p => p.category === 'coffee').length },
+  ];
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-stone-900">Kafe taom va ichimliklar menyusi</h2>
+          <p className="text-xs text-stone-500 mt-1">Barcha mahsulotlar, narxlar va buyurtmaga qo‘shish</p>
+        </div>
+
+        {/* Search */}
+        <div className="relative w-full sm:w-72">
+          <Icon name="search" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Mahsulot nomi bo‘yicha qidirish..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-white border border-stone-200 rounded-2xl text-xs font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-sm"
+          />
+        </div>
+      </div>
+
+      {/* Category Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {categories.map(cat => (
+          <button
+            key={cat.id}
+            onClick={() => setSelectedCategory(cat.id)}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+              selectedCategory === cat.id
+                ? 'bg-cafe-800 text-amber-300 shadow-md'
+                : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+            }`}
+          >
+            <span>{cat.name}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+              selectedCategory === cat.id ? 'bg-amber-500/30 text-amber-200' : 'bg-stone-100 text-stone-500'
+            }`}>
+              {cat.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Product Cards Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+        {filteredProducts.map(product => {
+          const isOutOfStock = product.inStock === false;
+
+          return (
+            <div
+              key={product.id}
+              className={`bg-white rounded-3xl p-4 border border-stone-200 shadow-card hover:shadow-card-hover transition-all duration-300 flex flex-col justify-between group ${
+                isOutOfStock ? 'opacity-50' : ''
+              }`}
+            >
+              <div>
+                {/* SVG Visual */}
+                <div className="w-full h-32 bg-stone-50 rounded-2xl flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
+                  <FoodIcon name={product.icon} className="w-20 h-20" />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                      {product.category === 'food' ? 'Taom' : product.category === 'drinks' ? 'Ichimlik' : 'Desert'}
+                    </span>
+                    {isOutOfStock && (
+                      <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Mavjud emas</span>
+                    )}
+                  </div>
+                  <h4 className="font-extrabold text-stone-900 text-sm mt-1">{product.name}</h4>
+                  <p className="text-[11px] text-stone-400 line-clamp-2 leading-relaxed">
+                    {product.description || "Mazali ta'm va yangi ingredientlar"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 mt-3 border-t border-stone-100 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-stone-400 block">Narxi</span>
+                  <span className="font-mono font-extrabold text-sm text-cafe-900 text-amber-800">
+                    {formatUZS(product.price)}
+                  </span>
+                </div>
+                <button
+                  disabled={isOutOfStock}
+                  onClick={() => onSelectProduct(product)}
+                  className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-cafe-950 font-bold text-xs flex items-center gap-1 shadow-sm transition"
+                >
+                  <Icon name="plus" className="w-3.5 h-3.5" />
+                  <span>Qo‘shish</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+    </div>
+  );
+};
+
+// 4. ORDER HISTORY VIEW
+const HistoryView = ({ orderHistory, onOpenReceipt }) => {
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [dateFilter, setDateFilter] = React.useState('all'); // 'all', 'today', 'yesterday'
+  const [paymentFilter, setPaymentFilter] = React.useState('all');
+  const [tableFilter, setTableFilter] = React.useState('all');
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+  const filteredOrders = orderHistory.filter(order => {
+    // Search by ID, table name or item name
+    const matchesSearch = 
+      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.tableName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (order.items || []).some(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // Date filter
+    let matchesDate = true;
+    if (dateFilter === 'today') {
+      matchesDate = order.dateOnly === todayStr || (order.timestamp && order.timestamp.startsWith(todayStr));
+    } else if (dateFilter === 'yesterday') {
+      matchesDate = order.dateOnly === yesterday || (order.timestamp && order.timestamp.startsWith(yesterday));
+    }
+
+    // Payment method filter
+    const matchesPayment = paymentFilter === 'all' || order.paymentMethod === paymentFilter;
+
+    // Table filter
+    const matchesTable = tableFilter === 'all' || String(order.tableId) === tableFilter;
+
+    return matchesSearch && matchesDate && matchesPayment && matchesTable;
+  });
+
+  const totalFilteredSales = filteredOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-stone-900">Buyurtmalar va to‘lovlar tarixi</h2>
+          <p className="text-xs text-stone-500 mt-1">Barcha yakunlangan hisoblar xotirada doimiy saqlanadi</p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900">
+            Jami ko‘rsatilgan: <span className="font-mono text-sm ml-1">{formatUZS(totalFilteredSales)}</span> ({filteredOrders.length} ta)
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Bar */}
+      <div className="bg-white rounded-3xl p-4 shadow-card border border-stone-200/80 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          
+          {/* Search Input */}
+          <div className="relative">
+            <Icon name="search" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Chek №, stol yoki taom qidirish..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+            />
+          </div>
+
+          {/* Date Filter */}
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 outline-none"
+          >
+            <option value="all">Sana: Barchasi</option>
+            <option value="today">Sana: Bugun</option>
+            <option value="yesterday">Sana: Kecha</option>
+          </select>
+
+          {/* Payment Method Filter */}
+          <select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 outline-none"
+          >
+            <option value="all">To‘lov turi: Barchasi</option>
+            <option value="Naqd pul">Naqd pul</option>
+            <option value="Plastik karta">Plastik karta</option>
+          </select>
+
+          {/* Table Number Filter */}
+          <select
+            value={tableFilter}
+            onChange={(e) => setTableFilter(e.target.value)}
+            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 outline-none"
+          >
+            <option value="all">Stol: Barcha stollar</option>
+            {[...Array(10)].map((_, i) => (
+              <option key={i + 1} value={String(i + 1)}>Stol {i + 1}</option>
+            ))}
+          </select>
+
+        </div>
+      </div>
+
+      {/* Orders Table */}
+      <div className="bg-white rounded-3xl shadow-card border border-stone-200/80 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="bg-stone-50/80 border-b border-stone-200 text-stone-500 font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-3 px-4">Chek raqami</th>
+                <th className="py-3 px-4">Stol</th>
+                <th className="py-3 px-4">Buyurtma tarkibi</th>
+                <th className="py-3 px-4">To‘lov usuli</th>
+                <th className="py-3 px-4">Sana va vaqt</th>
+                <th className="py-3 px-4 text-right">Jami summa</th>
+                <th className="py-3 px-4 text-center">Chek</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100 text-stone-700">
+              {filteredOrders.map(order => (
+                <tr key={order.id} className="hover:bg-amber-50/30 transition">
+                  <td className="py-3.5 px-4 font-mono font-bold text-stone-900">{order.id}</td>
+                  <td className="py-3.5 px-4 font-bold text-cafe-900">{order.tableName}</td>
+                  <td className="py-3.5 px-4 text-stone-600 max-w-sm">
+                    <div className="truncate">
+                      {(order.items || []).map(i => `${i.name} (${i.quantity}x)`).join(', ')}
+                    </div>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-[11px] ${
+                      order.paymentMethod === 'Naqd pul' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-blue-50 text-blue-800 border border-blue-200'
+                    }`}>
+                      <Icon name={order.paymentMethod === 'Naqd pul' ? 'cash' : 'card'} className="w-3.5 h-3.5" />
+                      <span>{order.paymentMethod}</span>
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-stone-500 font-medium">{order.formattedDate}</td>
+                  <td className="py-3.5 px-4 text-right font-mono font-extrabold text-sm text-stone-900">
+                    {formatUZS(order.total)}
+                  </td>
+                  <td className="py-3.5 px-4 text-center">
+                    <button
+                      onClick={() => onOpenReceipt(order)}
+                      className="px-3 py-1.5 rounded-xl bg-cafe-50 hover:bg-cafe-800 hover:text-amber-300 text-cafe-800 font-bold transition flex items-center gap-1.5 mx-auto border border-cafe-200"
+                    >
+                      <Icon name="printer" className="w-3.5 h-3.5" />
+                      <span>Chek</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {filteredOrders.length === 0 && (
+            <div className="text-center py-16 text-stone-400">
+              <Icon name="history" className="w-12 h-12 mx-auto mb-2 opacity-40" />
+              <p className="font-bold text-stone-700">Tarixda buyurtma topilmadi</p>
+              <p className="text-xs text-stone-400 mt-1">Filtrlarni o‘zgartiring yoki yangi to‘lov amalga oshiring</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+// 5. DAILY SALES AND STATISTICS VIEW
+const StatisticsView = ({ orderHistory, tables, products }) => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayOrders = orderHistory.filter(o => o.dateOnly === todayStr || (o.timestamp && o.timestamp.startsWith(todayStr)));
+
+  const todaySales = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const totalProductsSold = todayOrders.reduce((sum, o) => {
+    return sum + (o.items || []).reduce((s, i) => s + i.quantity, 0);
+  }, 0);
+  const completedOrdersCount = todayOrders.length;
+  const occupiedTablesCount = tables.filter(t => t.status === 'occupied' || t.status === 'payment_pending').length;
+
+  // Cash vs Card breakdown
+  const cashSales = todayOrders.filter(o => o.paymentMethod === 'Naqd pul').reduce((s, o) => s + (o.total || 0), 0);
+  const cardSales = todayOrders.filter(o => o.paymentMethod === 'Plastik karta').reduce((s, o) => s + (o.total || 0), 0);
+  const cashPercent = todaySales > 0 ? Math.round((cashSales / todaySales) * 100) : 50;
+  const cardPercent = todaySales > 0 ? 100 - cashPercent : 50;
+
+  // Most popular products calculation
+  const productStats = {};
+  orderHistory.forEach(order => {
+    (order.items || []).forEach(item => {
+      if (!productStats[item.name]) {
+        productStats[item.name] = { name: item.name, quantity: 0, revenue: 0, icon: item.icon };
+      }
+      productStats[item.name].quantity += item.quantity;
+      productStats[item.name].revenue += item.price * item.quantity;
+    });
+  });
+
+  const popularProducts = Object.values(productStats)
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 5);
+
+  const maxPopularQty = popularProducts.length > 0 ? popularProducts[0].quantity : 1;
+
+  // Hourly sales distribution chart (Native HTML/SVG)
+  const hours = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00', '23:00'];
+  const hourlyData = [
+    { hour: '09:00', sales: 45000, orders: 1 },
+    { hour: '11:00', sales: 86000, orders: 2 },
+    { hour: '13:00', sales: 249000, orders: 4 },
+    { hour: '15:00', sales: 120000, orders: 2 },
+    { hour: '17:00', sales: todaySales > 500000 ? 180000 : 70000, orders: 2 },
+    { hour: '19:00', sales: todaySales > 700000 ? 250000 : 90000, orders: 3 },
+    { hour: '21:00', sales: todaySales > 900000 ? 160000 : 40000, orders: 1 },
+    { hour: '23:00', sales: 0, orders: 0 }
+  ];
+
+  const maxHourlySales = Math.max(...hourlyData.map(d => d.sales), 100000);
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-extrabold text-stone-900">Kunlik savdo va statistika</h2>
+        <p className="text-xs text-stone-500 mt-1">Har bir buyurtma to‘langanda statistika avtomatik yangilanadi</p>
+      </div>
+
+      {/* 4 Primary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          title="Bugungi umumiy tushum"
+          value={formatUZS(todaySales)}
+          subtext="Barcha to‘lovlar bo‘yicha"
+          icon="cash"
+          color="amber"
+        />
+        <StatCard
+          title="Sotilgan mahsulotlar"
+          value={`${totalProductsSold} ta`}
+          subtext="Bugungi jami porsiyalar"
+          icon="menu"
+          color="cafe"
+        />
+        <StatCard
+          title="Bajarilgan buyurtmalar"
+          value={`${completedOrdersCount} ta`}
+          subtext="Yopilgan hisoblar soni"
+          icon="check"
+          color="emerald"
+        />
+        <StatCard
+          title="Hozirgi band stollar"
+          value={`${occupiedTablesCount} ta`}
+          subtext="10 ta stoldan faol"
+          icon="user"
+          color="indigo"
+        />
+      </div>
+
+      {/* Charts Section: Hourly Bar Chart & Payment Method Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Hourly Sales Bar Chart (Native SVG & CSS) */}
+        <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-card border border-stone-200/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-extrabold text-stone-900">Soatlik savdo dinamikasi</h3>
+              <p className="text-xs text-stone-500">Kunning turli vaqtlaridagi kassa tushumi (so‘m)</p>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
+              Bugungi kun
+            </span>
+          </div>
+
+          {/* Bar Chart Container */}
+          <div className="h-64 flex items-end justify-between gap-2 sm:gap-4 pt-8 pb-2 px-2 border-b border-stone-200">
+            {hourlyData.map((d, idx) => {
+              const heightPercent = Math.max(8, Math.round((d.sales / maxHourlySales) * 100));
+
+              return (
+                <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group relative">
+                  {/* Hover Tooltip */}
+                  <div className="absolute -top-12 bg-stone-900 text-white text-[10px] font-mono py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap shadow-lg z-20">
+                    <p className="font-bold">{d.hour}: {formatUZS(d.sales)}</p>
+                    <p className="text-amber-300">{d.orders} ta buyurtma</p>
+                  </div>
+
+                  {/* The Bar */}
+                  <div
+                    style={{ height: `${heightPercent}%` }}
+                    className="w-full max-w-[42px] rounded-t-xl bg-gradient-to-t from-amber-600 to-amber-400 group-hover:from-amber-700 group-hover:to-amber-500 transition-all duration-300 relative"
+                  >
+                    {d.sales > 0 && (
+                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-mono font-bold text-stone-600 hidden sm:block">
+                        {Math.round(d.sales / 1000)}k
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-semibold text-stone-500 mt-2">{d.hour}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between text-xs text-stone-400">
+            <span>09:00 — Kafe ochilishi</span>
+            <span>23:00 — Smena yakuni</span>
+          </div>
+        </div>
+
+        {/* Payment Methods Breakdown */}
+        <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80 flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-extrabold text-stone-900">To‘lov turlari ulushi</h3>
+            <p className="text-xs text-stone-500 mt-1">Naqd pul va Plastik karta nisbati</p>
+          </div>
+
+          <div className="my-6 space-y-4">
+            {/* Visual Bar */}
+            <div className="h-6 w-full rounded-2xl bg-stone-100 p-1 flex overflow-hidden">
+              <div 
+                style={{ width: `${cashPercent}%` }} 
+                className="bg-emerald-500 rounded-l-xl transition-all duration-500"
+                title={`Naqd pul: ${cashPercent}%`}
+              ></div>
+              <div 
+                style={{ width: `${cardPercent}%` }} 
+                className="bg-blue-600 rounded-r-xl transition-all duration-500"
+                title={`Plastik karta: ${cardPercent}%`}
+              ></div>
+            </div>
+
+            {/* Details */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500 text-white">
+                    <Icon name="cash" className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-stone-800 text-xs">Naqd pul</h5>
+                    <p className="text-[11px] text-stone-500">{cashPercent}% barcha to‘lovlardan</p>
+                  </div>
+                </div>
+                <span className="font-mono font-extrabold text-xs text-emerald-800">
+                  {formatUZS(cashSales)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/60 border border-blue-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-blue-600 text-white">
+                    <Icon name="card" className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-stone-800 text-xs">Plastik karta</h5>
+                    <p className="text-[11px] text-stone-500">{cardPercent}% barcha to‘lovlardan</p>
+                  </div>
+                </div>
+                <span className="font-mono font-extrabold text-xs text-blue-800">
+                  {formatUZS(cardSales)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 text-center text-xs text-stone-600 font-medium">
+            Jami bugungi to‘lov: <b className="text-stone-900 font-mono">{formatUZS(todaySales)}</b>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Top 5 Most Popular Products */}
+      <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-extrabold text-stone-900">Eng ko‘p sotilgan mahsulotlar (Top 5)</h3>
+            <p className="text-xs text-stone-500">Mijozlar tomonidan eng ko‘p buyurtma qilingan taom va ichimliklar</p>
+          </div>
+          <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+            Reyting
+          </span>
+        </div>
+
+        <div className="space-y-4">
+          {popularProducts.map((prod, idx) => {
+            const barWidth = Math.round((prod.quantity / maxPopularQty) * 100);
+
+            return (
+              <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl hover:bg-stone-50 transition border border-stone-100">
+                <div className="flex items-center gap-3 min-w-[200px]">
+                  <div className="w-8 h-8 rounded-xl bg-cafe-800 text-amber-300 font-extrabold text-xs flex items-center justify-center">
+                    #{idx + 1}
+                  </div>
+                  <div>
+                    <h5 className="font-extrabold text-stone-900 text-sm">{prod.name}</h5>
+                    <span className="text-xs text-stone-400 font-medium">{prod.quantity} ta sotilgan</span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="flex-1 max-w-md mx-2">
+                  <div className="h-3 w-full bg-stone-100 rounded-full overflow-hidden">
+                    <div
+                      style={{ width: `${barWidth}%` }}
+                      className="h-full bg-gradient-to-r from-amber-500 to-amber-600 rounded-full transition-all duration-500"
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="font-mono font-extrabold text-sm text-stone-900">
+                    {formatUZS(prod.revenue)}
+                  </span>
+                  <span className="text-[10px] text-stone-400 block">Jami tushum</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+// 6. SETTINGS VIEW
+const SettingsView = ({
+  settings,
+  onUpdateSettings,
+  products,
+  onAddProduct,
+  onUpdateProduct,
+  onDeleteProduct,
+  onResetAllData,
+  onClearHistory
+}) => {
+  const [activeTab, setActiveTab] = React.useState('menu'); // 'menu' | 'cafe' | 'data'
+
+  // Form state for adding/editing product
+  const [productModal, setProductModal] = React.useState({ isOpen: false, isNew: true, product: null });
+  const [formData, setFormData] = React.useState({ name: '', price: 20000, category: 'food', icon: 'hotdog', description: '' });
+
+  // Cafe info form
+  const [cafeForm, setCafeForm] = React.useState({ ...settings });
+
+  const handleOpenNew = () => {
+    setFormData({ name: '', price: 20000, category: 'food', icon: 'hotdog', description: '' });
+    setProductModal({ isOpen: true, isNew: true, product: null });
+  };
+
+  const handleOpenEdit = (product) => {
+    setFormData({ ...product });
+    setProductModal({ isOpen: true, isNew: false, product });
+  };
+
+  const handleSaveProduct = (e) => {
+    e.preventDefault();
+    if (!formData.name.trim() || formData.price <= 0) return;
+
+    if (productModal.isNew) {
+      onAddProduct({
+        ...formData,
+        id: 'p_' + Date.now(),
+        inStock: true
+      });
+    } else {
+      onUpdateProduct({
+        ...productModal.product,
+        ...formData
+      });
+    }
+    setProductModal({ isOpen: false, isNew: true, product: null });
+  };
+
+  const handleSaveCafe = (e) => {
+    e.preventDefault();
+    onUpdateSettings(cafeForm);
+  };
+
+  const iconOptions = [
+    'hotdog', 'hamburger', 'cheeseburger', 'lavash', 'fries', 'pizza',
+    'fanta', 'cola', 'water', 'juice', 'tea', 'coffee', 'cake'
+  ];
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-stone-900">Tizim sozlamalari</h2>
+          <p className="text-xs text-stone-500 mt-1">Menyu tahrirlash, yangi mahsulot qo‘shish, narxlarni o‘zgartirish va ma’lumotlar</p>
+        </div>
+
+        {/* Tab switcher */}
+        <div className="flex items-center gap-1.5 bg-stone-100 p-1.5 rounded-2xl">
+          <button
+            onClick={() => setActiveTab('menu')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'menu' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            Menyuni boshqarish
+          </button>
+          <button
+            onClick={() => setActiveTab('cafe')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'cafe' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            Kafe ma’lumotlari
+          </button>
+          <button
+            onClick={() => setActiveTab('data')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'data' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            Ma’lumotlar bazasi
+          </button>
+        </div>
+      </div>
+
+      {/* 1. MENU MANAGEMENT TAB */}
+      {activeTab === 'menu' && (
+        <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80 space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-extrabold text-stone-900">Mahsulotlar ro‘yxati</h3>
+              <p className="text-xs text-stone-500">Narxlarni o‘zgartirish, mahsulot o‘chirish yoki yangi taom qo‘shish</p>
+            </div>
+            <button
+              onClick={handleOpenNew}
+              className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-cafe-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-2 transition"
+            >
+              <Icon name="plus" className="w-4 h-4" />
+              <span>Yangi mahsulot qo‘shish</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-stone-200 text-stone-500 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-3">Rasm</th>
+                  <th className="py-3 px-3">Nomi</th>
+                  <th className="py-3 px-3">Kategoriya</th>
+                  <th className="py-3 px-3 font-mono">Narxi</th>
+                  <th className="py-3 px-3">Holati</th>
+                  <th className="py-3 px-3 text-right">Amallar</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-700">
+                {products.map(product => (
+                  <tr key={product.id} className="hover:bg-stone-50/80 transition">
+                    <td className="py-3 px-3">
+                      <div className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center border border-stone-200/70">
+                        <FoodIcon name={product.icon} className="w-8 h-8" />
+                      </div>
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="font-extrabold text-stone-900 text-sm">{product.name}</div>
+                      <div className="text-[11px] text-stone-400">{product.description}</div>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="capitalize px-2.5 py-1 rounded-md text-[11px] font-semibold bg-stone-100 text-stone-700">
+                        {product.category === 'food' ? 'Taom' : product.category === 'drinks' ? 'Ichimlik' : 'Desert'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 font-mono font-bold text-sm text-stone-900">
+                      {formatUZS(product.price)}
+                    </td>
+                    <td className="py-3 px-3">
+                      <button
+                        onClick={() => onUpdateProduct({ ...product, inStock: !product.inStock })}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                          product.inStock !== false ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}
+                      >
+                        {product.inStock !== false ? 'Mavjud' : 'Mavjud emas'}
+                      </button>
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleOpenEdit(product)}
+                          className="p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition"
+                          title="Tahrirlash"
+                        >
+                          <Icon name="edit" className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteProduct(product.id)}
+                          className="p-2 rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition"
+                          title="O‘chirish"
+                        >
+                          <Icon name="trash" className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* 2. CAFE PROFILE SETTINGS TAB */}
+      {activeTab === 'cafe' && (
+        <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80 max-w-2xl">
+          <h3 className="text-lg font-extrabold text-stone-900 mb-1">Kafe rekvizitlari va chek sozlamalari</h3>
+          <p className="text-xs text-stone-500 mb-6">Ushbu ma’lumotlar chop etiladigan kassa cheklarida aks etadi</p>
+
+          <form onSubmit={handleSaveCafe} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1">Kafe nomi:</label>
+              <input
+                type="text"
+                value={cafeForm.cafeName}
+                onChange={(e) => setCafeForm({ ...cafeForm, cafeName: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1">Shior / Ta’rif:</label>
+              <input
+                type="text"
+                value={cafeForm.cafeTagline}
+                onChange={(e) => setCafeForm({ ...cafeForm, cafeTagline: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Telefon raqami:</label>
+                <input
+                  type="text"
+                  value={cafeForm.phone}
+                  onChange={(e) => setCafeForm({ ...cafeForm, phone: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Xizmat haqi (%):</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="30"
+                  value={cafeForm.serviceFeePercent}
+                  onChange={(e) => setCafeForm({ ...cafeForm, serviceFeePercent: Number(e.target.value) || 0 })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1">Manzil:</label>
+              <input
+                type="text"
+                value={cafeForm.address}
+                onChange={(e) => setCafeForm({ ...cafeForm, address: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1">Chekdagi minnatdorchilik xabari:</label>
+              <textarea
+                rows="2"
+                value={cafeForm.receiptNote}
+                onChange={(e) => setCafeForm({ ...cafeForm, receiptNote: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+              ></textarea>
+            </div>
+
+            <button
+              type="submit"
+              className="py-3 px-6 rounded-2xl bg-cafe-800 hover:bg-cafe-900 text-amber-300 font-extrabold text-sm shadow-md transition"
+            >
+              Sozlamalarni saqlash
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* 3. DATA & SYSTEM MANAGEMENT TAB */}
+      {activeTab === 'data' && (
+        <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80 max-w-2xl space-y-6">
+          <div>
+            <h3 className="text-lg font-extrabold text-stone-900">Ma’lumotlar bazasi va xotira boshqaruvi</h3>
+            <p className="text-xs text-stone-500 mt-1">Browser localStorage orqali barcha buyurtmalar saqlanadi</p>
+          </div>
+
+          <div className="space-y-4 pt-2">
+            <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 flex items-center justify-between">
+              <div>
+                <h5 className="font-bold text-sm text-amber-950">Namuna ma’lumotlarni qayta tiklash</h5>
+                <p className="text-xs text-amber-800 mt-0.5">Barcha 10 ta stol va menyuni dastlabki holatga qaytarish</p>
+              </div>
+              <button
+                onClick={onResetAllData}
+                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition"
+              >
+                Tiklash
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-red-50/60 border border-red-200 flex items-center justify-between">
+              <div>
+                <h5 className="font-bold text-sm text-red-950">Buyurtmalar tarixini tozalash</h5>
+                <p className="text-xs text-red-700 mt-0.5">Barcha yakunlangan cheklar arxivini tozalaydi</p>
+              </div>
+              <button
+                onClick={onClearHistory}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition"
+              >
+                Tozalash
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Add/Edit Modal */}
+      {productModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-modal border border-stone-200">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+              <h3 className="text-lg font-extrabold text-stone-900">
+                {productModal.isNew ? "Yangi mahsulot qo‘shish" : "Mahsulotni tahrirlash"}
+              </h3>
+              <button onClick={() => setProductModal({ isOpen: false, isNew: true, product: null })} className="p-1.5 text-stone-400 hover:text-stone-700">
+                <Icon name="close" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProduct} className="space-y-4 my-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Mahsulot nomi:</label>
+                <input
+                  type="text"
+                  placeholder="Masalan: Double Cheeseburger"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Narxi (so‘m):</label>
+                  <input
+                    type="number"
+                    step="1000"
+                    min="1000"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) || 0 })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Kategoriya:</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold outline-none"
+                  >
+                    <option value="food">Taom</option>
+                    <option value="drinks">Ichimlik</option>
+                    <option value="coffee">Qahva & Shirinlik</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Icon selector */}
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1.5">Ikonka tanlang:</label>
+                <div className="grid grid-cols-5 gap-2 max-h-36 overflow-y-auto p-2 bg-stone-50 rounded-xl border border-stone-200">
+                  {iconOptions.map(iconKey => (
+                    <button
+                      key={iconKey}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, icon: iconKey })}
+                      className={`p-2 rounded-xl border flex items-center justify-center transition ${
+                        formData.icon === iconKey ? 'border-amber-500 bg-amber-100 ring-2 ring-amber-500/20' : 'border-stone-200 bg-white hover:bg-stone-100'
+                      }`}
+                    >
+                      <FoodIcon name={iconKey} className="w-8 h-8" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Qisqacha ta’rif:</label>
+                <input
+                  type="text"
+                  placeholder="Ingredientlar va xususiyati"
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setProductModal({ isOpen: false, isNew: true, product: null })}
+                  className="flex-1 py-2.5 rounded-xl border border-stone-300 font-bold text-stone-700 text-xs hover:bg-stone-100"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-md transition"
+                >
+                  Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+
+// MAIN ROOT APPLICATION COMPONENT
+const App = () => {
+  // 1. Persistent State initialized from localStorage or defaults
+  const [tables, setTables] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_TABLES_V1');
+      return saved ? JSON.parse(saved) : DEFAULT_TABLES;
+    } catch (e) {
+      return DEFAULT_TABLES;
+    }
+  });
+
+  const [products, setProducts] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_PRODUCTS_V1');
+      return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
+    } catch (e) {
+      return DEFAULT_PRODUCTS;
+    }
+  });
+
+  const [orderHistory, setOrderHistory] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_HISTORY_V1');
+      return saved ? JSON.parse(saved) : getInitialHistory();
+    } catch (e) {
+      return getInitialHistory();
+    }
+  });
+
+  const [settings, setSettings] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_SETTINGS_V1');
+      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    } catch (e) {
+      return DEFAULT_SETTINGS;
+    }
+  });
+
+  // UI state
+  const [activeTab, setActiveTab] = React.useState('dashboard'); // 'dashboard', 'tables', 'menu', 'history', 'stats', 'settings'
+  const [selectedTableId, setSelectedTableId] = React.useState(null);
+  const [paymentTable, setPaymentTable] = React.useState(null);
+  const [receiptOrder, setReceiptOrder] = React.useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [soundEnabled, setSoundEnabled] = React.useState(true);
+  const [currentTime, setCurrentTime] = React.useState(new Date());
+
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = React.useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Ha, tasdiqlayman',
+    isDestructive: false,
+    onConfirm: () => {}
+  });
+
+  // Toasts
+  const [toasts, setToasts] = React.useState([]);
+
+  const addToast = (type, title, message = '') => {
+    const id = 't_' + Date.now() + Math.random().toString(36).substr(2, 4);
+    setToasts(prev => [...prev, { id, type, title, message }]);
+    if (soundEnabled) {
+      if (type === 'success') playSound('add');
+      else if (type === 'error') playSound('delete');
+    }
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3200);
+  };
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Sync state to localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('RAYHON_CAFE_TABLES_V1', JSON.stringify(tables));
+    } catch (e) {}
+  }, [tables]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('RAYHON_CAFE_PRODUCTS_V1', JSON.stringify(products));
+    } catch (e) {}
+  }, [products]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('RAYHON_CAFE_HISTORY_V1', JSON.stringify(orderHistory));
+    } catch (e) {}
+  }, [orderHistory]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('RAYHON_CAFE_SETTINGS_V1', JSON.stringify(settings));
+    } catch (e) {}
+  }, [settings]);
+
+  // Live Clock
+  React.useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Handlers for Tables & Orders
+  const handleSelectTable = (tableId) => {
+    if (soundEnabled) playSound('click');
+    setSelectedTableId(tableId);
+  };
+
+  const handleAddItem = (tableId, product) => {
+    setTables(prev => prev.map(t => {
+      if (t.id === tableId) {
+        const currentOrder = t.order || [];
+        const existingIndex = currentOrder.findIndex(item => item.id === product.id);
+        let updatedOrder;
+
+        if (existingIndex > -1) {
+          updatedOrder = currentOrder.map((item, idx) => 
+            idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item
+          );
+        } else {
+          updatedOrder = [
+            ...currentOrder,
+            {
+              id: product.id,
+              name: product.name,
+              price: product.price,
+              category: product.category,
+              icon: product.icon,
+              quantity: 1
+            }
+          ];
+        }
+
+        // Auto change status to 'occupied' if it was 'available'
+        const newStatus = t.status === 'available' ? 'occupied' : t.status;
+        const openedAtTime = t.openedAt || formatTime(new Date());
+
+        return {
+          ...t,
+          status: newStatus,
+          order: updatedOrder,
+          openedAt: openedAtTime
+        };
+      }
+      return t;
+    }));
+
+    if (soundEnabled) playSound('add');
+    addToast('success', `${product.name} qo‘shildi`, `Stol ${tableId} buyurtmasiga kiritildi`);
+  };
+
+  const handleUpdateQuantity = (tableId, itemId, newQuantity) => {
+    setTables(prev => prev.map(t => {
+      if (t.id === tableId) {
+        let updatedOrder;
+        if (newQuantity <= 0) {
+          updatedOrder = (t.order || []).filter(item => item.id !== itemId);
+        } else {
+          updatedOrder = (t.order || []).map(item => 
+            item.id === itemId ? { ...item, quantity: newQuantity } : item
+          );
+        }
+        return { ...t, order: updatedOrder };
+      }
+      return t;
+    }));
+
+    if (soundEnabled) {
+      if (newQuantity <= 0) playSound('delete');
+      else playSound('click');
+    }
+  };
+
+  const handleRemoveItem = (tableId, itemId) => {
+    setTables(prev => prev.map(t => {
+      if (t.id === tableId) {
+        return {
+          ...t,
+          order: (t.order || []).filter(item => item.id !== itemId)
+        };
+      }
+      return t;
+    }));
+
+    if (soundEnabled) playSound('delete');
+    addToast('info', "Mahsulot o‘chirildi");
+  };
+
+  const handleChangeStatus = (tableId, newStatus) => {
+    setTables(prev => prev.map(t => {
+      if (t.id === tableId) {
+        return { ...t, status: newStatus };
+      }
+      return t;
+    }));
+    if (soundEnabled) playSound('click');
+    addToast('info', `Stol ${tableId} holati o‘zgardi`);
+  };
+
+  const handleClearTable = (tableId) => {
+    const tableObj = tables.find(t => t.id === tableId);
+    if (!tableObj) return;
+
+    setConfirmModal({
+      isOpen: true,
+      title: `${tableObj.name}ni tozalash`,
+      message: `Haqiqatan ham ${tableObj.name} buyurtmasini bekor qilib, stolni bo‘shatmoqchimisiz? Ushbu amal ortga qaytarilmaydi.`,
+      confirmText: 'Ha, tozalash',
+      isDestructive: true,
+      onConfirm: () => {
+        setTables(prev => prev.map(t => {
+          if (t.id === tableId) {
+            return {
+              ...t,
+              status: 'available',
+              order: [],
+              openedAt: null,
+              notes: ''
+            };
+          }
+          return t;
+        }));
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        if (soundEnabled) playSound('delete');
+        addToast('info', `${tableObj.name} tozalandi va bo‘shatildi`);
+      }
+    });
+  };
+
+  const handleTransferTable = (fromTableId, toTableId) => {
+    const fromTable = tables.find(t => t.id === fromTableId);
+    const toTable = tables.find(t => t.id === toTableId);
+    if (!fromTable || !toTable) return;
+
+    setTables(prev => prev.map(t => {
+      if (t.id === toTableId) {
+        return {
+          ...t,
+          status: 'occupied',
+          order: [...(fromTable.order || [])],
+          openedAt: fromTable.openedAt || formatTime(new Date()),
+          notes: fromTable.notes || ''
+        };
+      }
+      if (t.id === fromTableId) {
+        return {
+          ...t,
+          status: 'available',
+          order: [],
+          openedAt: null,
+          notes: ''
+        };
+      }
+      return t;
+    }));
+
+    if (soundEnabled) playSound('add');
+    addToast('success', "Stol ko‘chirildi", `${fromTable.name} buyurtmasi ${toTable.name}ga o‘tkazildi`);
+  };
+
+  const handleProceedToPayment = (table) => {
+    setSelectedTableId(null);
+    setPaymentTable(table);
+  };
+
+  const handleConfirmPayment = ({ table, paymentMethod, cashReceived, cashChange, subtotal, serviceAmount, grandTotal }) => {
+    const now = new Date();
+    const orderRecord = {
+      id: "ORD-" + Math.floor(1000 + Math.random() * 9000),
+      tableId: table.id,
+      tableName: table.name,
+      items: [...(table.order || [])],
+      subtotal,
+      serviceCharge: serviceAmount,
+      total: grandTotal,
+      paymentMethod,
+      cashReceived,
+      cashChange,
+      timestamp: now.toISOString(),
+      formattedDate: formatDateTime(now),
+      dateOnly: now.toISOString().split('T')[0],
+      waiter: table.waiter || "Alisher"
+    };
+
+    // Save to order history
+    setOrderHistory(prev => [orderRecord, ...prev]);
+
+    // Clear and mark table as available
+    setTables(prev => prev.map(t => {
+      if (t.id === table.id) {
+        return {
+          ...t,
+          status: 'available',
+          order: [],
+          openedAt: null,
+          notes: ''
+        };
+      }
+      return t;
+    }));
+
+    setPaymentTable(null);
+    if (soundEnabled) playSound('cash');
+    addToast('success', "To‘lov muvaffaqiyatli qabul qilindi!", `${table.name} bo‘shatildi`);
+
+    // Show thermal receipt modal
+    setReceiptOrder(orderRecord);
+  };
+
+  // Menu Product Handlers
+  const handleAddProduct = (newProduct) => {
+    setProducts(prev => [...prev, newProduct]);
+    addToast('success', "Yangi mahsulot menyuga qo‘shildi");
+  };
+
+  const handleUpdateProduct = (updatedProduct) => {
+    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+    addToast('success', "Mahsulot ma’lumotlari yangilandi");
+  };
+
+  const handleDeleteProduct = (productId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Mahsulotni o‘chirish",
+      message: "Haqiqatan ham ushbu mahsulotni menyudan butunlay o‘chirmoqchimisiz?",
+      confirmText: "Ha, o‘chirish",
+      isDestructive: true,
+      onConfirm: () => {
+        setProducts(prev => prev.filter(p => p.id !== productId));
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        addToast('info', "Mahsulot menyudan o‘chirildi");
+      }
+    });
+  };
+
+  const handleUpdateSettings = (newSettings) => {
+    setSettings(newSettings);
+    addToast('success', "Sozlamalar muvaffaqiyatli saqlandi");
+  };
+
+  const handleResetAllData = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Boshlang‘ich ma’lumotlarni tiklash",
+      message: "Barcha 10 ta stol va menyu dastlabki holatga qaytariladi. Rozimisiz?",
+      confirmText: "Ha, qayta tiklash",
+      isDestructive: true,
+      onConfirm: () => {
+        setTables(DEFAULT_TABLES);
+        setProducts(DEFAULT_PRODUCTS);
+        setOrderHistory(getInitialHistory());
+        setSettings(DEFAULT_SETTINGS);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        addToast('success', "Barcha ma’lumotlar tiklandi");
+      }
+    });
+  };
+
+  const handleClearHistory = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Tarixni tozalash",
+      message: "Barcha yopilgan hisoblar va buyurtmalar tarixi o‘chiriladi. Davom etasizmi?",
+      confirmText: "Ha, tozalash",
+      isDestructive: true,
+      onConfirm: () => {
+        setOrderHistory([]);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        addToast('info', "Buyurtmalar tarixi tozalandi");
+      }
+    });
+  };
+
+  const activeSelectedTable = tables.find(t => t.id === selectedTableId);
+  const occupiedCount = tables.filter(t => t.status === 'occupied').length;
+  const pendingCount = tables.filter(t => t.status === 'payment_pending').length;
+
+  const navItems = [
+    { id: 'dashboard', name: 'Bosh sahifa', icon: 'dashboard' },
+    { id: 'tables', name: 'Stollar', icon: 'tables', badge: occupiedCount + pendingCount > 0 ? `${occupiedCount + pendingCount} band` : null },
+    { id: 'menu', name: 'Menyu', icon: 'menu' },
+    { id: 'history', name: 'Tarix', icon: 'history' },
+    { id: 'stats', name: 'Statistika', icon: 'stats' },
+    { id: 'settings', name: 'Sozlamalar', icon: 'settings' },
+  ];
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-[#FAF7F2]">
+      
+      {/* SIDEBAR (Desktop) */}
+      <aside className="hidden lg:flex w-72 flex-col bg-cafe-950 text-white border-r border-cafe-900 select-none">
+        
+        {/* Brand Header */}
+        <div className="p-6 border-b border-cafe-900/80 flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-cafe-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20">
+            <Icon name="coffee-cup" className="w-7 h-7" />
+          </div>
+          <div>
+            <h1 className="font-extrabold text-base tracking-wide text-white">{settings.cafeName}</h1>
+            <p className="text-[11px] text-amber-300/80 font-medium">Boshqaruv tizimi (POS)</p>
+          </div>
+        </div>
+
+        {/* Live Clock Card */}
+        <div className="px-6 py-4 border-b border-cafe-900/50 bg-cafe-900/30">
+          <div className="flex items-center justify-between text-xs text-stone-400">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Icon name="clock" className="w-3.5 h-3.5 text-amber-400" />
+              <span>{formatDate(currentTime)}</span>
+            </span>
+            <span className="font-mono font-bold text-amber-300 text-sm">
+              {formatTime(currentTime)}
+            </span>
+          </div>
+        </div>
+
+        {/* Navigation Items */}
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+          {navItems.map(item => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (soundEnabled) playSound('click');
+                  setActiveTab(item.id);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-200 ${
+                  isActive
+                    ? 'bg-amber-500 text-cafe-950 shadow-lg shadow-amber-500/20 translate-x-1'
+                    : 'text-stone-300 hover:text-white hover:bg-cafe-900/60'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon name={item.icon} className={`w-5 h-5 ${isActive ? 'text-cafe-950' : 'text-stone-400'}`} />
+                  <span className="text-sm">{item.name}</span>
+                </div>
+                {item.badge && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                    isActive ? 'bg-cafe-950 text-amber-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Sound toggle & Waiter Profile Footer */}
+        <div className="p-4 border-t border-cafe-900/80 bg-cafe-900/40 space-y-3">
+          <div className="flex items-center justify-between text-xs text-stone-400 px-2">
+            <span>Ovozli signallar</span>
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`p-1.5 rounded-xl border transition ${
+                soundEnabled ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-stone-800 border-stone-700 text-stone-500'
+              }`}
+              title={soundEnabled ? "Ovozni o'chirish" : "Ovozni yoqish"}
+            >
+              <Icon name="check" className={`w-3.5 h-3.5 ${soundEnabled ? 'opacity-100' : 'opacity-0'}`} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 p-2 rounded-2xl bg-cafe-900/60 border border-cafe-800">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-xs">
+              <Icon name="user" className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h5 className="font-bold text-xs text-white truncate">Alisher (Kassir)</h5>
+              <p className="text-[10px] text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Tizimda onlayn
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+      {/* MOBILE SIDEBAR DRAWER */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div className="fixed inset-0 bg-stone-950/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
+          <div className="relative w-72 bg-cafe-950 text-white flex flex-col h-full shadow-2xl z-10">
+            <div className="p-6 border-b border-cafe-900 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-cafe-950 flex items-center justify-center font-black">
+                  <Icon name="coffee-cup" className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-sm text-white">{settings.cafeName}</h3>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)} className="text-stone-400 hover:text-white">
+                <Icon name="close" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition ${
+                    activeTab === item.id ? 'bg-amber-500 text-cafe-950 font-extrabold' : 'text-stone-300 hover:bg-cafe-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon name={item.icon} className="w-5 h-5" />
+                    <span>{item.name}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        
+        {/* Top Header Bar */}
+        <header className="h-18 px-4 sm:px-8 py-3.5 bg-white border-b border-stone-200/80 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-xl text-stone-600 hover:bg-stone-100"
+            >
+              <Icon name="menu" className="w-6 h-6" />
+            </button>
+            <div>
+              <h2 className="text-lg font-extrabold text-stone-900 capitalize">
+                {navItems.find(i => i.id === activeTab)?.name || 'Boshqaruv'}
+              </h2>
+              <p className="text-[11px] text-stone-400 hidden sm:block">
+                Toshkent vaqti: {formatTime(currentTime)} | 10 ta stol monitoringi
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Quick Active Tables Pill */}
+            <div 
+              onClick={() => setActiveTab('tables')}
+              className="cursor-pointer px-3.5 py-1.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2 transition"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse-dot"></span>
+              <span>Band stollar: <b>{occupiedCount + pendingCount}/10</b></span>
+            </div>
+
+            {/* Quick POS opener */}
+            <button
+              onClick={() => {
+                const firstAvailable = tables.find(t => t.status === 'available') || tables[0];
+                handleSelectTable(firstAvailable.id);
+              }}
+              className="px-4 py-2 rounded-2xl bg-cafe-800 hover:bg-cafe-900 text-amber-300 font-bold text-xs shadow-md shadow-cafe-900/10 flex items-center gap-1.5 transition"
+            >
+              <Icon name="plus" className="w-4 h-4" />
+              <span className="hidden sm:inline">Tezkor buyurtma</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Main Tab Screen Container */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                tables={tables}
+                products={products}
+                orderHistory={orderHistory}
+                onSelectTable={handleSelectTable}
+                onOpenReceipt={(order) => setReceiptOrder(order)}
+                onNavigateTab={(tab) => setActiveTab(tab)}
+              />
+            )}
+
+            {activeTab === 'tables' && (
+              <TablesView
+                tables={tables}
+                onSelectTable={handleSelectTable}
+                onChangeStatus={handleChangeStatus}
+                onProceedToPayment={handleProceedToPayment}
+                onClearTable={handleClearTable}
+              />
+            )}
+
+            {activeTab === 'menu' && (
+              <MenuView
+                products={products}
+                tables={tables}
+                onSelectProduct={(product) => {
+                  // If a table is active, add to it; else prompt to open table
+                  const firstOccupiedOrAvail = tables.find(t => t.status === 'occupied') || tables.find(t => t.status === 'available') || tables[0];
+                  handleSelectTable(firstOccupiedOrAvail.id);
+                  handleAddItem(firstOccupiedOrAvail.id, product);
+                }}
+              />
+            )}
+
+            {activeTab === 'history' && (
+              <HistoryView
+                orderHistory={orderHistory}
+                onOpenReceipt={(order) => setReceiptOrder(order)}
+              />
+            )}
+
+            {activeTab === 'stats' && (
+              <StatisticsView
+                orderHistory={orderHistory}
+                tables={tables}
+                products={products}
+              />
+            )}
+
+            {activeTab === 'settings' && (
+              <SettingsView
+                settings={settings}
+                onUpdateSettings={handleUpdateSettings}
+                products={products}
+                onAddProduct={handleAddProduct}
+                onUpdateProduct={handleUpdateProduct}
+                onDeleteProduct={handleDeleteProduct}
+                onResetAllData={handleResetAllData}
+                onClearHistory={handleClearHistory}
+              />
+            )}
+          </div>
+        </main>
+
+      </div>
+
+      {/* POS Order Modal Drawer */}
+      <POSDrawer
+        isOpen={Boolean(selectedTableId)}
+        table={activeSelectedTable}
+        products={products}
+        onClose={() => setSelectedTableId(null)}
+        onAddItem={handleAddItem}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onProceedToPayment={handleProceedToPayment}
+        onChangeStatus={handleChangeStatus}
+        onClearTable={handleClearTable}
+        onTransferTable={handleTransferTable}
+        tablesList={tables}
+        serviceFeePercent={settings.serviceFeePercent || 0}
+      />
+
+      {/* Payment Checkout Modal */}
+      <PaymentModal
+        isOpen={Boolean(paymentTable)}
+        table={paymentTable}
+        settings={settings}
+        onClose={() => setPaymentTable(null)}
+        onConfirmPayment={handleConfirmPayment}
+      />
+
+      {/* Thermal Receipt Print Modal */}
+      <ReceiptModal
+        isOpen={Boolean(receiptOrder)}
+        order={receiptOrder}
+        settings={settings}
+        onClose={() => setReceiptOrder(null)}
+      />
+
+      {/* Confirmation Dialog */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        isDestructive={confirmModal.isDestructive}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* Floating Toast Alerts */}
+      <ToastContainer
+        toasts={toasts}
+        onDismiss={removeToast}
+      />
+
+    </div>
+  );
+};
+
+// Render React App to DOM
+const rootElement = document.getElementById('root');
+const root = ReactDOM.createRoot(rootElement);
+root.render(<App />);
+
+
+  </script>
+</body>
+</html>
+
+
