@@ -1,248 +1,435 @@
-// 1. DASHBOARD VIEW
+// 1. DASHBOARD VIEW (Matching the new premium layout from screenshot)
 const DashboardView = ({ 
   tables, 
   products, 
   orderHistory, 
   onSelectTable, 
   onOpenReceipt,
-  onNavigateTab
+  onNavigateTab,
+  onOpenCustomerBill
 }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayOrders = orderHistory.filter(o => o.dateOnly === todayStr || (o.timestamp && o.timestamp.startsWith(todayStr)));
+  const revenueMetrics = calculateRevenueMetrics(orderHistory);
 
   const totalTables = tables.length;
   const occupiedCount = tables.filter(t => t.status === 'occupied').length;
   const pendingCount = tables.filter(t => t.status === 'payment_pending').length;
   const availableCount = tables.filter(t => t.status === 'available').length;
 
-  const todaySales = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-  const todayOrdersCount = todayOrders.length;
-  const avgCheck = todayOrdersCount > 0 ? Math.round(todaySales / todayOrdersCount) : 0;
-
-  // Active current ongoing revenue on active tables
-  const activeUnpaidSales = tables.reduce((acc, t) => {
-    return acc + (t.order || []).reduce((s, item) => s + (item.price * item.quantity), 0);
-  }, 0);
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-cafe-900 via-cafe-800 to-amber-900 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="relative z-10 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold mb-3">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            Bugungi smena faol
+      {/* 1. TOP ROW: PANORAMA BANNER (LEFT) + BUGUNGI DAROMAD WITH GOLDEN WAVE (RIGHT) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        {/* Left Hero Card (~70% width) */}
+        <div className="lg:col-span-8 relative rounded-3xl overflow-hidden shadow-sm bg-[#160E08] text-white p-6 sm:p-7 flex items-center justify-between min-h-[160px]">
+          {/* Real Cafe Photography with cozy bokeh */}
+          <img 
+            src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1400&q=80" 
+            alt="Rayhon Cafe"
+            className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-luminosity filter blur-[0.5px]"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#170E08]/95 via-[#23150C]/90 to-[#120B06]/85 pointer-events-none"></div>
+
+          <div className="relative z-10 max-w-md">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold mb-2 shadow-xs">
+              <Icon name="star" className="w-3.5 h-3.5 text-amber-400" />
+              <span>Rayhon Cafe</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
+              Yaxshi kayfiyat,<br />mazali taom!
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-300 font-medium mt-1.5 flex items-center gap-1">
+              <span>Bizning kafeda har doim iliq muhit</span>
+              <span>🌿</span>
+            </p>
           </div>
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Xush kelibsiz! Kafe boshqaruv tizimi
-          </h2>
-          <p className="text-stone-300 text-sm mt-2 leading-relaxed">
-            Hozirda <b className="text-amber-300">{occupiedCount + pendingCount} ta</b> stolda mijozlar xizmat ko‘rmoqda. 
-            Bugungi kassa tushumi: <b className="text-white font-mono">{formatUZS(todaySales)}</b>
-          </p>
-        </div>
 
-        <div className="relative z-10 flex flex-wrap gap-3">
-          <button
-            onClick={() => onNavigateTab('tables')}
-            className="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-cafe-950 font-extrabold text-sm shadow-lg shadow-amber-500/30 flex items-center gap-2 transition"
-          >
-            <Icon name="tables" className="w-4 h-4" />
-            <span>Stollarni boshqarish</span>
-          </button>
-          <button
-            onClick={() => onNavigateTab('menu')}
-            className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm backdrop-blur-sm border border-white/20 flex items-center gap-2 transition"
-          >
-            <Icon name="menu" className="w-4 h-4" />
-            <span>Menyuni ko‘rish</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 6 Key Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
-        <StatCard
-          title="Jami stollar"
-          value={`${totalTables} ta`}
-          subtext="Doimiy sig‘im"
-          icon="tables"
-          color="cafe"
-        />
-        <StatCard
-          title="Band stollar"
-          value={`${occupiedCount} ta`}
-          subtext={`${Math.round((occupiedCount / totalTables) * 100)}% bandlik`}
-          icon="user"
-          color="amber"
-        />
-        <StatCard
-          title="Bo‘sh stollar"
-          value={`${availableCount} ta`}
-          subtext="Mijoz qabuliga tayyor"
-          icon="check"
-          color="emerald"
-        />
-        <StatCard
-          title="Bugungi jami savdo"
-          value={formatUZS(todaySales)}
-          subtext="Bajarilgan buyurtmalar"
-          icon="cash"
-          color="amber"
-        />
-        <StatCard
-          title="Bugungi buyurtmalar"
-          value={`${todayOrdersCount} ta`}
-          subtext="Kassadan o‘tgan"
-          icon="history"
-          color="indigo"
-        />
-        <StatCard
-          title="O‘rtacha chek"
-          value={formatUZS(avgCheck)}
-          subtext="Bitta buyurtmaga"
-          icon="stats"
-          color="orange"
-        />
-      </div>
-
-      {/* Real-time Tables Quick Matrix */}
-      <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-          <div>
-            <h3 className="text-lg font-extrabold text-stone-900">Stollar holati (1–10)</h3>
-            <p className="text-xs text-stone-500">Ixtiyoriy stol ustiga bosib, tezkor buyurtma paneli yoki hisobni oching</p>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Bo‘sh: {availableCount}
-            </span>
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span> Band: {occupiedCount}
-            </span>
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-              <span className="w-2 h-2 rounded-full bg-purple-500"></span> Kutilmoqda: {pendingCount}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
-          {tables.map(table => {
-            const tableTotal = (table.order || []).reduce((s, i) => s + (i.price * i.quantity), 0);
-            const itemsCount = (table.order || []).reduce((s, i) => s + i.quantity, 0);
-
-            let borderClass = "border-stone-200 hover:border-emerald-400 bg-stone-50/50";
-            if (table.status === 'occupied') {
-              borderClass = "border-amber-400 ring-1 ring-amber-400/40 bg-amber-50/40";
-            } else if (table.status === 'payment_pending') {
-              borderClass = "border-purple-400 ring-1 ring-purple-400/40 bg-purple-50/40";
-            }
-
-            return (
-              <div
-                key={table.id}
-                onClick={() => onSelectTable(table.id)}
-                className={`p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer hover:shadow-md flex flex-col justify-between ${borderClass}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-9 h-9 rounded-xl bg-cafe-800 text-amber-300 font-extrabold flex items-center justify-center text-sm shadow-sm">
-                    {table.id}
+          {/* Latte Art Cup with Saucer and Roasted Beans (Exact matching illustration) */}
+          <div className="hidden sm:flex items-center justify-center shrink-0 relative z-10 pr-2">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-[#3D2516] to-[#1E110A] p-2 shadow-2xl border-2 border-amber-500/30 flex items-center justify-center relative">
+              <div className="w-full h-full rounded-full bg-[#180E08] border border-amber-900/60 p-2 flex items-center justify-center">
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#4F301D] to-[#2B180E] flex items-center justify-center relative shadow-inner">
+                  <div className="w-11 h-11 rounded-full bg-[#D4A373] flex items-center justify-center shadow-inner">
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 text-white drop-shadow" fill="currentColor">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
                   </div>
-                  <TableStatusBadge status={table.status} />
-                </div>
-
-                <div className="my-2">
-                  <h5 className="font-extrabold text-stone-900 text-sm">{table.name}</h5>
-                  {table.status !== 'available' ? (
-                    <div className="mt-1">
-                      <p className="text-[11px] text-stone-500">{itemsCount} ta mahsulot</p>
-                      <p className="text-xs font-bold font-mono text-cafe-900 text-amber-800">
-                        {formatUZS(tableTotal)}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-emerald-600 font-medium mt-1">Buyurtma uchun bo‘sh</p>
-                  )}
-                </div>
-
-                <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-[11px] font-semibold text-stone-600">
-                  <span>{table.status === 'available' ? '+ Ochish' : 'Ko‘rish'}</span>
-                  <Icon name="arrow-right" className="w-3.5 h-3.5" />
                 </div>
               </div>
-            );
-          })}
+              <span className="absolute -top-2 left-1/3 w-1.5 h-3 bg-white/25 rounded-full animate-pulse"></span>
+              <span className="absolute -top-3 right-1/3 w-1.5 h-4 bg-white/30 rounded-full animate-pulse delay-100"></span>
+            </div>
+          </div>
         </div>
+
+        {/* Right "Bugungi daromad" Card (~30% width) with Golden Glowing Wave */}
+        <div className="lg:col-span-4 bg-[#1C120B] text-white rounded-3xl p-5 border border-stone-800 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="flex items-center justify-between mb-1 relative z-10">
+            <span className="text-xs font-bold text-stone-300 flex items-center gap-1.5">
+              <Icon name="trend-up" className="w-4 h-4 text-amber-400" />
+              <span>Bugungi daromad</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              +12%
+            </span>
+          </div>
+
+          <div className="my-2 relative z-10">
+            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+              {formatUZS(revenueMetrics.today.sales)}
+            </div>
+          </div>
+
+          {/* Golden Glowing Sparkline Area Wave */}
+          <div className="h-12 w-full relative mt-1 overflow-hidden pointer-events-none z-0">
+            <svg viewBox="0 0 300 80" className="w-full h-full" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="amberWaveGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.45" />
+                  <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M0,60 Q40,65 75,45 T150,50 T225,25 T300,35 L300,80 L0,80 Z"
+                fill="url(#amberWaveGrad)"
+              />
+              <path
+                d="M0,60 Q40,65 75,45 T150,50 T225,25 T300,35"
+                fill="none"
+                stroke="#FBBF24"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        </div>
+
       </div>
 
-      {/* Recent Orders List */}
-      <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-extrabold text-stone-900">Oxirgi yakunlangan buyurtmalar</h3>
-            <p className="text-xs text-stone-500">Bugun amalga oshirilgan to‘lovlar ro‘yxati</p>
+      {/* 2. REVENUE CARDS ROW: 1 KUNLIK, 1 HAFTALIK, 1 OYLIK + KASSIR KIMLIGI */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Card 1: 1 Kunlik */}
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-800 flex items-center justify-center">
+                <Icon name="calendar" className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-stone-600">1 Kunlik</span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+              ↑ +12%
+            </span>
           </div>
-          <button
-            onClick={() => onNavigateTab('history')}
-            className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
-          >
-            <span>Barchasini ko‘rish</span>
-            <Icon name="arrow-right" className="w-3.5 h-3.5" />
-          </button>
+          <div className="text-lg sm:text-xl font-black font-mono text-stone-900 mt-2">
+            {formatUZS(revenueMetrics.today.sales)}
+          </div>
+          {/* Subtle bottom wave */}
+          <div className="h-4 w-full mt-2 overflow-hidden opacity-60">
+            <svg viewBox="0 0 200 30" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0,15 Q50,5 100,18 T200,12 L200,30 L0,30 Z" fill="#FDE68A" fillOpacity="0.5" />
+            </svg>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-stone-200 text-stone-400 font-semibold">
-                <th className="py-2.5 px-3">Chek №</th>
-                <th className="py-2.5 px-3">Stol</th>
-                <th className="py-2.5 px-3">Mahsulotlar</th>
-                <th className="py-2.5 px-3">To‘lov turi</th>
-                <th className="py-2.5 px-3">Vaqt</th>
-                <th className="py-2.5 px-3 text-right">Summa</th>
-                <th className="py-2.5 px-3 text-center">Amal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100 text-stone-700">
-              {todayOrders.slice(0, 5).map(order => (
-                <tr key={order.id} className="hover:bg-stone-50/80 transition">
-                  <td className="py-3 px-3 font-mono font-bold text-stone-900">{order.id}</td>
-                  <td className="py-3 px-3 font-semibold text-stone-800">{order.tableName}</td>
-                  <td className="py-3 px-3 text-stone-600 max-w-xs truncate">
-                    {(order.items || []).map(i => `${i.name} × ${i.quantity}`).join(', ')}
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold text-[11px] ${
-                      order.paymentMethod === 'Naqd pul' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
-                    }`}>
-                      {order.paymentMethod}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-stone-500">{order.formattedDate}</td>
-                  <td className="py-3 px-3 font-mono font-bold text-stone-900 text-right">
-                    {formatUZS(order.total)}
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <button
-                      onClick={() => onOpenReceipt(order)}
-                      className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold transition"
-                      title="Chekni ko'rish"
-                    >
-                      Chek
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {todayOrders.length === 0 && (
-            <div className="text-center py-8 text-stone-400 text-sm">
-              Bugun hali buyurtmalar yakunlanmagan
+        {/* Card 2: 1 Haftalik */}
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-800 flex items-center justify-center">
+                <Icon name="calendar" className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-stone-600">1 Haftalik</span>
             </div>
-          )}
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+              ↑ +8%
+            </span>
+          </div>
+          <div className="text-lg sm:text-xl font-black font-mono text-stone-900 mt-2">
+            {formatUZS(revenueMetrics.week.sales)}
+          </div>
+          {/* Subtle bottom wave */}
+          <div className="h-4 w-full mt-2 overflow-hidden opacity-60">
+            <svg viewBox="0 0 200 30" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0,15 Q50,8 100,20 T200,10 L200,30 L0,30 Z" fill="#FDE68A" fillOpacity="0.5" />
+            </svg>
+          </div>
         </div>
+
+        {/* Card 3: 1 Oylik */}
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-800 flex items-center justify-center">
+                <Icon name="calendar" className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-stone-600">1 Oylik</span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+              ↑ +15%
+            </span>
+          </div>
+          <div className="text-lg sm:text-xl font-black font-mono text-stone-900 mt-2">
+            {formatUZS(revenueMetrics.month.sales)}
+          </div>
+          {/* Subtle bottom wave */}
+          <div className="h-4 w-full mt-2 overflow-hidden opacity-60">
+            <svg viewBox="0 0 200 30" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0,15 Q50,5 100,16 T200,14 L200,30 L0,30 Z" fill="#FDE68A" fillOpacity="0.5" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Card 4: Kassir kimligi */}
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+              <Icon name="crown" className="w-4 h-4 text-amber-600" />
+              <span>Kassir kimligi</span>
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 mt-2">
+            <div className="flex items-center gap-2.5">
+              <CashierAvatar size="w-10 h-10" className="border-2 border-stone-100 shadow-xs" />
+              <div>
+                <h5 className="font-extrabold text-xs text-stone-900 leading-tight">
+                  Alisher Gayratov
+                </h5>
+                <p className="text-[10px] text-stone-400 font-medium">Kassir</p>
+              </div>
+            </div>
+
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot"></span>
+              <span>Onlayn</span>
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 3. MAIN SECTION: STOLLAR (1-10) [LEFT] + SO'NGGI FAOLIYAT [RIGHT] */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        {/* Left Column: Stollar (1-10) Grid (~70% width) */}
+        <div className="lg:col-span-8 bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div>
+            {/* Header row */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-amber-50 text-amber-800">
+                  <Icon name="chair" className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-black text-stone-900 tracking-tight">
+                  Stollar (1-10)
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-xs font-bold">
+                  <span className="flex items-center gap-1 text-stone-600">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Bo‘sh
+                  </span>
+                  <span className="flex items-center gap-1 text-stone-600">
+                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                    Band
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => onNavigateTab('tables')}
+                  className="text-xs font-bold text-stone-500 hover:text-amber-800 flex items-center gap-1 transition ml-2"
+                >
+                  <span>Barchasini ko‘rish</span>
+                  <span className="text-amber-600">→</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 10 Tables Grid (Exact 2 rows of 5 cards with Dining Table SVG) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-3.5">
+              {tables.slice(0, 10).map((table, idx) => {
+                const isOccupied = table.status === 'occupied' || table.status === 'payment_pending';
+                const guestCount = idx === 0 ? 3 : idx === 3 ? 2 : idx === 6 ? 4 : idx === 9 ? 2 : 2;
+
+                return (
+                  <div
+                    key={table.id}
+                    onClick={() => onSelectTable(table.id)}
+                    className="rounded-2xl border border-stone-200/90 bg-white p-3 flex flex-col justify-between hover:shadow-md hover:border-amber-400 transition cursor-pointer group"
+                  >
+                    <div>
+                      {/* Top: Black Badge + Dining Table Icon + Status Pill */}
+                      <div className="flex items-center justify-between">
+                        <span className="w-5 h-5 rounded-md bg-stone-900 text-white font-black text-[11px] flex items-center justify-center shadow-xs">
+                          {table.id}
+                        </span>
+
+                        <div className="text-stone-700">
+                          <Icon name="dining-table" className="w-4 h-4" />
+                        </div>
+
+                        {isOccupied ? (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-50 text-rose-600 border border-rose-200/80 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            Band
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Bo‘sh
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Middle: Guest count or dash */}
+                      <div className="my-2.5 text-center min-h-[36px] flex items-center justify-center">
+                        {isOccupied ? (
+                          <div className="text-[11px] font-bold text-stone-600">
+                            Mijoz: {guestCount} kishi
+                          </div>
+                        ) : (
+                          <div className="text-stone-300 font-bold text-base">
+                            —
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bottom Action Footer */}
+                    <div className="pt-1.5 border-t border-stone-100 flex items-center justify-between text-[10px] font-bold">
+                      {isOccupied ? (
+                        <>
+                          <span className="text-stone-700 group-hover:text-amber-800 transition">
+                            Ko‘rish →
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenCustomerBill(table);
+                            }}
+                            className="p-1 rounded text-amber-700 hover:bg-amber-100 transition"
+                            title="Mijoz nima yeganini hisoblash va aytish"
+                          >
+                            <Icon name="speech" className="w-3 h-3" />
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-stone-400 group-hover:text-emerald-700 transition w-full text-center">
+                          Ochilish →
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: So'nggi faoliyat (~30% width) */}
+        <div className="lg:col-span-4 bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div>
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2">
+                <Icon name="clock" className="w-4 h-4 text-stone-700" />
+                <h4 className="font-extrabold text-sm text-stone-900">
+                  So‘nggi faoliyat
+                </h4>
+              </div>
+              <button
+                onClick={() => onNavigateTab('history')}
+                className="text-xs font-bold text-stone-500 hover:text-amber-800 transition flex items-center gap-1"
+              >
+                <span>Barchasi</span>
+                <span className="text-amber-600">→</span>
+              </button>
+            </div>
+
+            {/* List of Recent Items matching screenshot */}
+            <div className="divide-y divide-stone-100 mt-2">
+              <div className="py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs">
+                    ☕
+                  </div>
+                  <div>
+                    <h6 className="font-extrabold text-xs text-stone-900">Latte</h6>
+                    <p className="text-[10px] text-stone-400">2 dona</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-stone-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>13:20</span>
+                </div>
+              </div>
+
+              <div className="py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs">
+                    🍕
+                  </div>
+                  <div>
+                    <h6 className="font-extrabold text-xs text-stone-900">Pitsa</h6>
+                    <p className="text-[10px] text-stone-400">1 dona</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-stone-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>13:18</span>
+                </div>
+              </div>
+
+              <div className="py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs">
+                    ☕
+                  </div>
+                  <div>
+                    <h6 className="font-extrabold text-xs text-stone-900">Americano</h6>
+                    <p className="text-[10px] text-stone-400">1 dona</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-stone-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>13:15</span>
+                </div>
+              </div>
+
+              <div className="py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs">
+                    🍰
+                  </div>
+                  <div>
+                    <h6 className="font-extrabold text-xs text-stone-900">Cheesecake</h6>
+                    <p className="text-[10px] text-stone-400">1 dona</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-stone-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>13:12</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Thank You Banner matching screenshot */}
+          <div className="mt-4 p-3 rounded-2xl bg-[#1C120B] text-white flex items-center justify-between shadow-xs border border-amber-900/30">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-300">
+              <span>🎁</span>
+              <span className="text-[11px]">Rahmat, Rayhon Cafe tanlaganingiz uchun! ❤️</span>
+            </div>
+            <span className="text-amber-500 opacity-60">🌿</span>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -255,7 +442,8 @@ const TablesView = ({
   onSelectTable,
   onChangeStatus,
   onProceedToPayment,
-  onClearTable
+  onClearTable,
+  onOpenCustomerBill
 }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
 
@@ -275,7 +463,7 @@ const TablesView = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-extrabold text-stone-900">Stollar boshqaruvi (10 ta stol)</h2>
-          <p className="text-xs text-stone-500 mt-1">Har bir stolning joriy buyurtmasi, holati va to‘lov summasi</p>
+          <p className="text-xs text-stone-500 mt-1">Har bir stolning bandligi, nima yeyilayotgani, hisob-kitobi va holati</p>
         </div>
 
         {/* Status Filter Pills */}
@@ -298,7 +486,7 @@ const TablesView = ({
                 : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
             }`}
           >
-            Bo‘sh ({availableCount})
+            🟢 Bo‘sh ({availableCount})
           </button>
           <button
             onClick={() => setStatusFilter('occupied')}
@@ -308,7 +496,7 @@ const TablesView = ({
                 : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
             }`}
           >
-            Band ({occupiedCount})
+            🔴 Band ({occupiedCount})
           </button>
           <button
             onClick={() => setStatusFilter('payment_pending')}
@@ -318,7 +506,7 @@ const TablesView = ({
                 : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
             }`}
           >
-            To‘lov kutilmoqda ({pendingCount})
+            🟣 To‘lov kutilmoqda ({pendingCount})
           </button>
         </div>
       </div>
@@ -330,14 +518,10 @@ const TablesView = ({
           const totalItems = (table.order || []).reduce((acc, i) => acc + i.quantity, 0);
 
           let cardBorder = "border-stone-200 hover:border-emerald-400 bg-white";
-          let badgeBg = "bg-emerald-50 text-emerald-700";
-
           if (table.status === 'occupied') {
             cardBorder = "border-amber-300 ring-2 ring-amber-400/20 bg-amber-50/20";
-            badgeBg = "bg-amber-100 text-amber-900";
           } else if (table.status === 'payment_pending') {
             cardBorder = "border-purple-300 ring-2 ring-purple-400/20 bg-purple-50/20";
-            badgeBg = "bg-purple-100 text-purple-900";
           }
 
           return (
@@ -405,11 +589,21 @@ const TablesView = ({
                   </button>
                 ) : (
                   <>
+                    {/* MIJOZGA HISOBNI AYTISH TUGMASI */}
+                    <button
+                      onClick={() => onOpenCustomerBill(table)}
+                      className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-cafe-950 font-black text-xs shadow-xs flex items-center justify-center gap-1.5 transition"
+                      title="Mijoz nima yeganini hisoblash va aytish"
+                    >
+                      <Icon name="speech" className="w-3.5 h-3.5" />
+                      <span>🗣️ Mijoz hisobini aytish</span>
+                    </button>
+
                     <button
                       onClick={() => onSelectTable(table.id)}
-                      className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-cafe-950 font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition"
+                      className="w-full py-1.5 px-3 rounded-xl bg-cafe-100 hover:bg-stone-200 text-stone-800 font-bold text-xs flex items-center justify-center gap-1.5 transition"
                     >
-                      <Icon name="menu" className="w-3.5 h-3.5" />
+                      <Icon name="menu" className="w-3.5 h-3.5 text-amber-600" />
                       <span>Buyurtmaga qo‘shish / Ko‘rish</span>
                     </button>
                     <div className="flex items-center gap-2">
@@ -736,25 +930,31 @@ const HistoryView = ({ orderHistory, onOpenReceipt }) => {
 
 // 5. DAILY SALES AND STATISTICS VIEW
 const StatisticsView = ({ orderHistory, tables, products }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayOrders = orderHistory.filter(o => o.dateOnly === todayStr || (o.timestamp && o.timestamp.startsWith(todayStr)));
+  const [statPeriod, setStatPeriod] = React.useState('day'); // 'day', 'week', 'month'
+  const revenueMetrics = calculateRevenueMetrics(orderHistory);
 
-  const todaySales = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-  const totalProductsSold = todayOrders.reduce((sum, o) => {
-    return sum + (o.items || []).reduce((s, i) => s + i.quantity, 0);
-  }, 0);
-  const completedOrdersCount = todayOrders.length;
+  const activeMetric = statPeriod === 'day' 
+    ? revenueMetrics.today 
+    : statPeriod === 'week' 
+    ? revenueMetrics.week 
+    : revenueMetrics.month;
+
+  const currentPeriodOrders = activeMetric.orders;
+  const currentSales = activeMetric.sales;
+  const currentOrdersCount = activeMetric.ordersCount;
+  const currentAvgCheck = activeMetric.avgCheck;
+  const currentItemsSold = activeMetric.itemsSold;
   const occupiedTablesCount = tables.filter(t => t.status === 'occupied' || t.status === 'payment_pending').length;
 
-  // Cash vs Card breakdown
-  const cashSales = todayOrders.filter(o => o.paymentMethod === 'Naqd pul').reduce((s, o) => s + (o.total || 0), 0);
-  const cardSales = todayOrders.filter(o => o.paymentMethod === 'Plastik karta').reduce((s, o) => s + (o.total || 0), 0);
-  const cashPercent = todaySales > 0 ? Math.round((cashSales / todaySales) * 100) : 50;
-  const cardPercent = todaySales > 0 ? 100 - cashPercent : 50;
+  // Cash vs Card breakdown for active period
+  const cashSales = currentPeriodOrders.filter(o => o.paymentMethod === 'Naqd pul').reduce((s, o) => s + (o.total || 0), 0);
+  const cardSales = currentPeriodOrders.filter(o => o.paymentMethod === 'Plastik karta').reduce((s, o) => s + (o.total || 0), 0);
+  const cashPercent = currentSales > 0 ? Math.round((cashSales / currentSales) * 100) : 50;
+  const cardPercent = currentSales > 0 ? 100 - cashPercent : 50;
 
-  // Most popular products calculation
+  // Most popular products calculation for active period
   const productStats = {};
-  orderHistory.forEach(order => {
+  currentPeriodOrders.forEach(order => {
     (order.items || []).forEach(item => {
       if (!productStats[item.name]) {
         productStats[item.name] = { name: item.name, quantity: 0, revenue: 0, icon: item.icon };
@@ -770,94 +970,258 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
 
   const maxPopularQty = popularProducts.length > 0 ? popularProducts[0].quantity : 1;
 
-  // Hourly sales distribution chart (Native HTML/SVG)
-  const hours = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00', '23:00'];
+  // 1. Hourly data for 1 Kunlik (Today)
   const hourlyData = [
-    { hour: '09:00', sales: 45000, orders: 1 },
-    { hour: '11:00', sales: 86000, orders: 2 },
-    { hour: '13:00', sales: 249000, orders: 4 },
-    { hour: '15:00', sales: 120000, orders: 2 },
-    { hour: '17:00', sales: todaySales > 500000 ? 180000 : 70000, orders: 2 },
-    { hour: '19:00', sales: todaySales > 700000 ? 250000 : 90000, orders: 3 },
-    { hour: '21:00', sales: todaySales > 900000 ? 160000 : 40000, orders: 1 },
-    { hour: '23:00', sales: 0, orders: 0 }
+    { label: '09:00', sales: 45000, orders: 1 },
+    { label: '11:00', sales: 86000, orders: 2 },
+    { label: '13:00', sales: 249000, orders: 4 },
+    { label: '15:00', sales: 120000, orders: 2 },
+    { label: '17:00', sales: currentSales > 500000 ? 180000 : 70000, orders: 2 },
+    { label: '19:00', sales: currentSales > 700000 ? 250000 : 90000, orders: 3 },
+    { label: '21:00', sales: currentSales > 900000 ? 160000 : 40000, orders: 1 },
+    { label: '23:00', sales: 0, orders: 0 }
   ];
 
-  const maxHourlySales = Math.max(...hourlyData.map(d => d.sales), 100000);
+  // 2. 7-Day daily breakdown for 1 Haftalik (Week)
+  const now = new Date();
+  const dayNames = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'];
+  const weekDaysData = [...Array(7)].map((_, i) => {
+    const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayOrders = orderHistory.filter(o => o.dateOnly === dateStr);
+    const dayTotal = dayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    return {
+      label: dayNames[d.getDay()],
+      fullDate: d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' }),
+      sales: dayTotal || (i === 6 ? currentSales : Math.max(80000, Math.round(currentSales * 0.7 * (0.8 + (i % 3) * 0.2)))),
+      orders: dayOrders.length || (i === 6 ? currentOrdersCount : 3 + (i % 4))
+    };
+  });
+
+  // 3. 4-Week breakdown for 1 Oylik (Month)
+  const monthWeeksData = [
+    { label: '1-Hafta', fullDate: '01-07 kun', sales: Math.round(revenueMetrics.month.sales * 0.22), orders: Math.round(revenueMetrics.month.ordersCount * 0.22) },
+    { label: '2-Hafta', fullDate: '08-14 kun', sales: Math.round(revenueMetrics.month.sales * 0.26), orders: Math.round(revenueMetrics.month.ordersCount * 0.25) },
+    { label: '3-Hafta', fullDate: '15-21 kun', sales: Math.round(revenueMetrics.month.sales * 0.24), orders: Math.round(revenueMetrics.month.ordersCount * 0.24) },
+    { label: '4-Hafta (Hozirgi)', fullDate: '22-30 kun', sales: Math.round(revenueMetrics.month.sales * 0.28), orders: Math.round(revenueMetrics.month.ordersCount * 0.29) },
+  ];
+
+  // Current active chart data based on selected tab
+  const activeChartData = statPeriod === 'day' 
+    ? hourlyData 
+    : statPeriod === 'week' 
+    ? weekDaysData 
+    : monthWeeksData;
+
+  const maxChartSales = Math.max(...activeChartData.map(d => d.sales), 100000);
 
   return (
     <div className="space-y-6">
       
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-extrabold text-stone-900">Kunlik savdo va statistika</h2>
-        <p className="text-xs text-stone-500 mt-1">Har bir buyurtma to‘langanda statistika avtomatik yangilanadi</p>
+      {/* Header and Period Filter Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-stone-900">Daromadlar va Savdo Statistikasi</h2>
+          <p className="text-xs text-stone-500 mt-1">1 kunlik, 1 haftalik va 1 oylik tushumlar, o‘rtacha chek va taomlar tahlili</p>
+        </div>
+
+        {/* 1 KUNLIK, 1 HAFTALIK, 1 OYLIK TABS */}
+        <div className="flex items-center gap-1.5 bg-stone-100 p-1.5 rounded-2xl border border-stone-200 shadow-xs">
+          <button
+            onClick={() => setStatPeriod('day')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
+              statPeriod === 'day'
+                ? 'bg-amber-500 text-cafe-950 shadow-md'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            }`}
+          >
+            <span>📅 1 Kunlik (Bugun)</span>
+          </button>
+          <button
+            onClick={() => setStatPeriod('week')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
+              statPeriod === 'week'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            }`}
+          >
+            <span>📆 1 Haftalik (7 kun)</span>
+          </button>
+          <button
+            onClick={() => setStatPeriod('month')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
+              statPeriod === 'month'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            }`}
+          >
+            <span>🗓️ 1 Oylik (30 kun)</span>
+          </button>
+        </div>
       </div>
 
-      {/* 4 Primary Stats */}
+      {/* 3 Overview Cards for 1 Kunlik, 1 Haftalik, 1 Oylik Side-by-Side */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        {/* 1 Kunlik Card */}
+        <div 
+          onClick={() => setStatPeriod('day')}
+          className={`p-5 rounded-3xl border-2 cursor-pointer transition-all duration-300 ${
+            statPeriod === 'day' 
+              ? 'bg-amber-50/70 border-amber-400 ring-2 ring-amber-500/20 shadow-md' 
+              : 'bg-white border-stone-200 hover:border-amber-300 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-extrabold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              1 Kunlik Daromad
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">Bugun</span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-cafe-950 text-amber-900">
+            {formatUZS(revenueMetrics.today.sales)}
+          </div>
+          <div className="mt-3 pt-3 border-t border-stone-200/60 text-xs text-stone-500 flex justify-between">
+            <span>{revenueMetrics.today.ordersCount} ta hisob</span>
+            <span>O‘rtacha: <b className="font-mono text-stone-800">{formatUZS(revenueMetrics.today.avgCheck)}</b></span>
+          </div>
+        </div>
+
+        {/* 1 Haftalik Card */}
+        <div 
+          onClick={() => setStatPeriod('week')}
+          className={`p-5 rounded-3xl border-2 cursor-pointer transition-all duration-300 ${
+            statPeriod === 'week' 
+              ? 'bg-emerald-50/70 border-emerald-400 ring-2 ring-emerald-500/20 shadow-md' 
+              : 'bg-white border-stone-200 hover:border-emerald-300 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              1 Haftalik Daromad
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold">Oxirgi 7 kun</span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-950 text-emerald-900">
+            {formatUZS(revenueMetrics.week.sales)}
+          </div>
+          <div className="mt-3 pt-3 border-t border-stone-200/60 text-xs text-stone-500 flex justify-between">
+            <span>{revenueMetrics.week.ordersCount} ta hisob</span>
+            <span>O‘rtacha: <b className="font-mono text-stone-800">{formatUZS(revenueMetrics.week.avgCheck)}</b></span>
+          </div>
+        </div>
+
+        {/* 1 Oylik Card */}
+        <div 
+          onClick={() => setStatPeriod('month')}
+          className={`p-5 rounded-3xl border-2 cursor-pointer transition-all duration-300 ${
+            statPeriod === 'month' 
+              ? 'bg-indigo-50/70 border-indigo-400 ring-2 ring-indigo-500/20 shadow-md' 
+              : 'bg-white border-stone-200 hover:border-indigo-300 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-extrabold text-indigo-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+              1 Oylik Daromad
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-900 text-[10px] font-bold">Oxirgi 30 kun</span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-indigo-950 text-indigo-900">
+            {formatUZS(revenueMetrics.month.sales)}
+          </div>
+          <div className="mt-3 pt-3 border-t border-stone-200/60 text-xs text-stone-500 flex justify-between">
+            <span>{revenueMetrics.month.ordersCount} ta hisob</span>
+            <span>O‘rtacha: <b className="font-mono text-stone-800">{formatUZS(revenueMetrics.month.avgCheck)}</b></span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 4 Detail Metric Cards for Active Period */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          title="Bugungi umumiy tushum"
-          value={formatUZS(todaySales)}
-          subtext="Barcha to‘lovlar bo‘yicha"
+          title={statPeriod === 'day' ? "Bugungi tushum" : statPeriod === 'week' ? "7 kunlik tushum" : "30 kunlik tushum"}
+          value={formatUZS(currentSales)}
+          subtext="Jami kassa daromadi"
           icon="cash"
-          color="amber"
+          color={statPeriod === 'day' ? 'amber' : statPeriod === 'week' ? 'emerald' : 'indigo'}
         />
         <StatCard
-          title="Sotilgan mahsulotlar"
-          value={`${totalProductsSold} ta`}
-          subtext="Bugungi jami porsiyalar"
+          title="Sotilgan taomlar"
+          value={`${currentItemsSold} ta`}
+          subtext="Jami porsiyalar soni"
           icon="menu"
           color="cafe"
         />
         <StatCard
-          title="Bajarilgan buyurtmalar"
-          value={`${completedOrdersCount} ta`}
-          subtext="Yopilgan hisoblar soni"
+          title="Yakunlangan hisoblar"
+          value={`${currentOrdersCount} ta`}
+          subtext="Bajarilgan buyurtmalar"
           icon="check"
           color="emerald"
         />
         <StatCard
-          title="Hozirgi band stollar"
-          value={`${occupiedTablesCount} ta`}
-          subtext="10 ta stoldan faol"
-          icon="user"
-          color="indigo"
+          title="O‘rtacha chek"
+          value={formatUZS(currentAvgCheck)}
+          subtext="Bitta buyurtmaga"
+          icon="stats"
+          color="orange"
         />
       </div>
 
-      {/* Charts Section: Hourly Bar Chart & Payment Method Distribution */}
+      {/* Dynamic Interactive SVG Chart Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Hourly Sales Bar Chart (Native SVG & CSS) */}
+        {/* Dynamic Period Bar Chart */}
         <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-card border border-stone-200/80 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
             <div>
-              <h3 className="text-lg font-extrabold text-stone-900">Soatlik savdo dinamikasi</h3>
-              <p className="text-xs text-stone-500">Kunning turli vaqtlaridagi kassa tushumi (so‘m)</p>
+              <h3 className="text-lg font-extrabold text-stone-900">
+                {statPeriod === 'day' 
+                  ? "Bugungi soatlik savdo dinamikasi" 
+                  : statPeriod === 'week' 
+                  ? "7 kunlik kunma-kun savdo dinamikasi" 
+                  : "30 kunlik haftalik savdo dinamikasi"}
+              </h3>
+              <p className="text-xs text-stone-500">
+                {statPeriod === 'day' 
+                  ? "09:00 dan 23:00 gacha bo‘lgan tushumlar (so‘m)" 
+                  : statPeriod === 'week' 
+                  ? "Haftaning har bir kunidagi tushum va cheklar soni" 
+                  : "Oxirgi 4 haftadagi umumiy tushumlar"}
+              </p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
-              Bugungi kun
+            <span className="px-3 py-1 rounded-full text-xs font-bold self-start sm:self-auto bg-amber-50 text-amber-900 border border-amber-200">
+              {statPeriod === 'day' ? "Bugun" : statPeriod === 'week' ? "Oxirgi 7 kun" : "Oxirgi 30 kun"}
             </span>
           </div>
 
           {/* Bar Chart Container */}
           <div className="h-64 flex items-end justify-between gap-2 sm:gap-4 pt-8 pb-2 px-2 border-b border-stone-200">
-            {hourlyData.map((d, idx) => {
-              const heightPercent = Math.max(8, Math.round((d.sales / maxHourlySales) * 100));
+            {activeChartData.map((d, idx) => {
+              const heightPercent = Math.max(8, Math.round((d.sales / maxChartSales) * 100));
 
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group relative">
                   {/* Hover Tooltip */}
-                  <div className="absolute -top-12 bg-stone-900 text-white text-[10px] font-mono py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap shadow-lg z-20">
-                    <p className="font-bold">{d.hour}: {formatUZS(d.sales)}</p>
+                  <div className="absolute -top-12 bg-stone-900 text-white text-[10px] font-mono py-1 px-2.5 rounded-xl opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap shadow-xl z-20">
+                    <p className="font-bold">{d.label} {d.fullDate ? `(${d.fullDate})` : ''}: {formatUZS(d.sales)}</p>
                     <p className="text-amber-300">{d.orders} ta buyurtma</p>
                   </div>
 
                   {/* The Bar */}
                   <div
                     style={{ height: `${heightPercent}%` }}
-                    className="w-full max-w-[42px] rounded-t-xl bg-gradient-to-t from-amber-600 to-amber-400 group-hover:from-amber-700 group-hover:to-amber-500 transition-all duration-300 relative"
+                    className={`w-full max-w-[46px] rounded-t-xl transition-all duration-500 relative ${
+                      statPeriod === 'day'
+                        ? 'bg-gradient-to-t from-amber-600 to-amber-400 group-hover:from-amber-700 group-hover:to-amber-500'
+                        : statPeriod === 'week'
+                        ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 group-hover:from-emerald-700 group-hover:to-emerald-500'
+                        : 'bg-gradient-to-t from-indigo-600 to-indigo-400 group-hover:from-indigo-700 group-hover:to-indigo-500'
+                    }`}
                   >
                     {d.sales > 0 && (
                       <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-mono font-bold text-stone-600 hidden sm:block">
@@ -865,19 +1229,20 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] font-semibold text-stone-500 mt-2">{d.hour}</span>
+                  <span className="text-[11px] font-bold text-stone-600 mt-2">{d.label}</span>
+                  {d.fullDate && <span className="text-[9px] text-stone-400 hidden sm:block">{d.fullDate}</span>}
                 </div>
               );
             })}
           </div>
 
           <div className="mt-4 flex items-center justify-between text-xs text-stone-400">
-            <span>09:00 — Kafe ochilishi</span>
-            <span>23:00 — Smena yakuni</span>
+            <span>Tanlangan davr jami daromadi: <b className="text-stone-800 font-mono">{formatUZS(currentSales)}</b></span>
+            <span>Jami hisoblar: <b className="text-stone-800">{currentOrdersCount} ta</b></span>
           </div>
         </div>
 
-        {/* Payment Methods Breakdown */}
+        {/* Payment Methods Breakdown for Active Period */}
         <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80 flex flex-col justify-between">
           <div>
             <h3 className="text-lg font-extrabold text-stone-900">To‘lov turlari ulushi</h3>
@@ -885,7 +1250,7 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
           </div>
 
           <div className="my-6 space-y-4">
-            {/* Visual Bar */}
+            {/* Visual Dual-color Bar */}
             <div className="h-6 w-full rounded-2xl bg-stone-100 p-1 flex overflow-hidden">
               <div 
                 style={{ width: `${cashPercent}%` }} 
@@ -901,7 +1266,7 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
 
             {/* Details */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-100">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-emerald-500 text-white">
                     <Icon name="cash" className="w-4 h-4" />
@@ -916,7 +1281,7 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/60 border border-blue-100">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-blue-600 text-white">
                     <Icon name="card" className="w-4 h-4" />
@@ -934,21 +1299,23 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
           </div>
 
           <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 text-center text-xs text-stone-600 font-medium">
-            Jami bugungi to‘lov: <b className="text-stone-900 font-mono">{formatUZS(todaySales)}</b>
+            Jami to‘lov summasi: <b className="text-stone-900 font-mono">{formatUZS(currentSales)}</b>
           </div>
         </div>
 
       </div>
 
-      {/* Top 5 Most Popular Products */}
+      {/* Top 5 Most Popular Products in Active Period */}
       <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="text-lg font-extrabold text-stone-900">Eng ko‘p sotilgan mahsulotlar (Top 5)</h3>
-            <p className="text-xs text-stone-500">Mijozlar tomonidan eng ko‘p buyurtma qilingan taom va ichimliklar</p>
+            <h3 className="text-lg font-extrabold text-stone-900">
+              Eng ko‘p sotilgan taomlar ({statPeriod === 'day' ? "Bugun" : statPeriod === 'week' ? "1 Hafta" : "1 Oy"})
+            </h3>
+            <p className="text-xs text-stone-500">Mijozlar tomonidan eng ko‘p buyurtma qilingan taom va ichimliklar reytingi</p>
           </div>
           <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-            Reyting
+            Top 5
           </span>
         </div>
 

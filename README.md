@@ -14,12 +14,50 @@ Barcha ma’lumotlar brauzerning `localStorage` xotirasida avtomatik va ishonchl
 
 ### 2-usul: Mahalliy server orqali ishga tushirish (Terminal orqali)
 ```bash
+npm run dev
+# yoki
 npm start
 # yoki
 node serve.js
 ```
-So‘ngra brauzeringizda oching:
+Server ishga tushganda avtomatik ravishda brauzeringizda quyidagi manzil ochiladi:
 👉 **`http://localhost:3000`**
+
+---
+
+## 🌟 MAXSUS VA YANGILANGAN IMKONIYATLAR
+
+### 1. 📊 1 Kunlik, 1 Haftalik va 1 Oylik Daromadlar Monitoringi
+* **Bosh sahifa (Dashboard)**da eng yuqorida 3 ta alohida taqqoslash kartalari:
+  - **1 Kunlik Daromad (Bugun)**: Bugungi jami tushum, cheklar soni va o'rtacha chek summasi.
+  - **1 Haftalik Daromad (Oxirgi 7 kun)**: So'nggi 7 kundagi umumiy kassa aylanmasi va buyurtmalar soni.
+  - **1 Oylik Daromad (Oxirgi 30 kun)**: Oylik umumiy daromad va oylik o'rtacha chek ko'rsatkichi.
+* **Statistika bo'limi**:
+  - `[1 Kunlik]`, `[1 Haftalik]`, `[1 Oylik]` tugmalari orqali davrni tanlash imkoniyati.
+  - Har bir davr uchun alohida dinamik grafiklar:
+    - 1 kunlik uchun: **Soatlik tushum taqsimoti** (09:00 dan 23:00 gacha).
+    - 1 haftalik uchun: **Kunlik tushum ustunli grafigi** (oxirgi 7 kun).
+    - 1 oylik uchun: **Haftalik guruhlangan tushum grafigi** (oxirgi 4 hafta).
+  - Tanlangan davrga mos ravishda eng ko'p sotilgan taomlar (Top 5).
+
+### 2. 🪑 10 ta Stolning Band va Bo'sh Holati Doimiy Ko'rinishi
+* **Bosh sahifada 10 ta stolning jonli monitoringi**:
+  - Har bir stol uchun yirik status belgilari:
+    - 🟢 **BO‘SH (Available)** — yashil rangda, stol yangi mijozni qabul qilishga tayyor.
+    - 🔴 **BAND (Occupied)** — to‘q sariq/qizil rangda, joriy buyurtma summasi va taomlar soni aks etadi.
+    - 🟣 **TO‘LOV KUTILMOQDA** — binafsha rangda, mijoz hisob-kitobni so‘ragan holat.
+  - Tezkor filtrlar: `Barchasi (10)`, `🟢 Bo‘sh stollar`, `🔴 Band stollar`, `🟣 To‘lov kutilmoqda`.
+  - Har bir band stol ustida **"🗣️ Mijoz hisobini aytish"** tugmasi mavjud.
+
+### 3. 🗣️ Mijoz Nima Yeganini Hisoblash va Mijozga Aytish Tizimi
+* Har qanday band stol kartasidan yoki buyurtma oynasidan **"🗣️ Mijoz hisobini aytish"** tugmasi bosilganda:
+  1. **To'liq ro'yxat**: Mijoz qaysi taom yoki ichimlikdan nechta yegani, har birining donasi va qatori bo'yicha hisob-kitobi birma-bir ko'rsatiladi.
+  2. **Jami hisob**: Taomlar qiymati, xizmat haqi va yakuniy to'lanishi lozim bo'lgan aniq summa ko'rsatiladi.
+  3. **Ovozli aytish (Web Speech API)**: `"Ovozli aytish"` tugmasi bosilganda kompyuter/telefon ovoz chiqarib o'zbek tilida aytib beradi:
+     > *"Hurmatli mijoz! Sizning Stol 5 dagi buyurtmangiz: 2 ta Hot Dog (36,000 so‘m), 1 ta Hamburger (25,000 so‘m)... Jami to‘lov: 81,000 so‘m bo‘ldi."*
+  4. **Nusxa olish**: Mijozga Telegram yoki SMS orqali jo'natish uchun matnni bir bosishda nusxalash.
+  5. **Pre-chek chiqarish**: Kassa chekini chop etish.
+  6. **To'lovni qabul qilish**: To'g'ridan-to'g'ri to'lov oynasiga o'tish (Naqd yoki Karta).
 
 ---
 

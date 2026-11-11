@@ -214,6 +214,14 @@ const formatDate = (dateObj) => {
   return d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
+const formatDateISO = (dateObj) => {
+  const d = dateObj ? new Date(dateObj) : new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const formatDateTime = (dateObj) => {
   const d = dateObj ? new Date(dateObj) : new Date();
   return `${formatDate(d)}, ${formatTime(d)}`;
@@ -246,6 +254,71 @@ const exportToCSV = (data, filename = 'rayhon_kafe_savdo_tarixi.csv') => {
   document.body.removeChild(link);
 };
 
+// Revenue Analysis Helper: 1 Kunlik, 1 Haftalik va 1 Oylik Daromatlar
+const calculateRevenueMetrics = (orderHistory) => {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  
+  // Timestamps thresholds
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+  const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+
+  // 1 Kunlik (Bugun)
+  const todayOrders = orderHistory.filter(o => {
+    const oTime = new Date(o.timestamp || o.dateOnly).getTime();
+    return o.dateOnly === todayStr || oTime >= startOfToday;
+  });
+  const todaySales = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const todayOrdersCount = todayOrders.length;
+  const todayAvgCheck = todayOrdersCount > 0 ? Math.round(todaySales / todayOrdersCount) : 0;
+  const todayItemsSold = todayOrders.reduce((acc, o) => acc + (o.items || []).reduce((s, i) => s + i.quantity, 0), 0);
+
+  // 1 Haftalik (Oxirgi 7 kun)
+  const weekOrders = orderHistory.filter(o => {
+    const oTime = new Date(o.timestamp || o.dateOnly).getTime();
+    return oTime >= sevenDaysAgo;
+  });
+  const weekSales = weekOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const weekOrdersCount = weekOrders.length;
+  const weekAvgCheck = weekOrdersCount > 0 ? Math.round(weekSales / weekOrdersCount) : 0;
+  const weekItemsSold = weekOrders.reduce((acc, o) => acc + (o.items || []).reduce((s, i) => s + i.quantity, 0), 0);
+
+  // 1 Oylik (Oxirgi 30 kun)
+  const monthOrders = orderHistory.filter(o => {
+    const oTime = new Date(o.timestamp || o.dateOnly).getTime();
+    return oTime >= thirtyDaysAgo;
+  });
+  const monthSales = monthOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const monthOrdersCount = monthOrders.length;
+  const monthAvgCheck = monthOrdersCount > 0 ? Math.round(monthSales / monthOrdersCount) : 0;
+  const monthItemsSold = monthOrders.reduce((acc, o) => acc + (o.items || []).reduce((s, i) => s + i.quantity, 0), 0);
+
+  return {
+    today: {
+      sales: todaySales,
+      ordersCount: todayOrdersCount,
+      avgCheck: todayAvgCheck,
+      itemsSold: todayItemsSold,
+      orders: todayOrders
+    },
+    week: {
+      sales: weekSales,
+      ordersCount: weekOrdersCount,
+      avgCheck: weekAvgCheck,
+      itemsSold: weekItemsSold,
+      orders: weekOrders
+    },
+    month: {
+      sales: monthSales,
+      ordersCount: monthOrdersCount,
+      avgCheck: monthAvgCheck,
+      itemsSold: monthItemsSold,
+      orders: monthOrders
+    }
+  };
+};
+
 // Waiters Staff List
 const WAITERS_LIST = ["Alisher", "Sardor", "Malika", "Bobur", "Jasur"];
 
@@ -273,66 +346,130 @@ const DEFAULT_PRODUCTS = [
   { id: 'c4', name: 'Chizkeyk', category: 'coffee', price: 24000, icon: 'cake', inStock: true, description: "Klassik Nyu-York chizkeyki mevali qaymoq bilan" }
 ];
 
-// Initial 10 Tables (Exact table 5 example from prompt included!)
+// Initial 10 Tables (Exact state matching Dashboard preview)
 const DEFAULT_TABLES = [
-  { id: 1, name: "Stol 1", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
   { 
-    id: 2, 
-    name: "Stol 2", 
+    id: 1, 
+    name: "Stol 1", 
     status: "occupied", 
     order: [
-      { id: 'f4', name: 'Lavash', price: 28000, quantity: 2, category: 'food' },
-      { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' },
-      { id: 'f5', name: 'French Fries', price: 15000, quantity: 1, category: 'food' }
+      { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+      { id: 'd3', name: 'Coca-Cola 1L', price: 10000, quantity: 1, category: 'drinks' }
     ], 
-    openedAt: "13:20", 
-    waiter: "Sardor", 
-    notes: "Sous alohida idishda berilsin",
-    discountPercent: 0
+    openedAt: "12:45", 
+    waiter: "Alisher", 
+    notes: "", 
+    discountPercent: 0 
   },
-  { id: 3, name: "Stol 3", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
+  { id: 2, name: "Stol 2", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
+  { 
+    id: 3, 
+    name: "Stol 3", 
+    status: "occupied", 
+    order: [
+      { id: 'f6', name: 'Pizza', price: 55000, quantity: 1, category: 'food' },
+      { id: 'f2', name: 'Hamburger', price: 25000, quantity: 1, category: 'food' }
+    ], 
+    openedAt: "13:15", 
+    waiter: "Sardor", 
+    notes: "", 
+    discountPercent: 0 
+  },
   { id: 4, name: "Stol 4", status: "available", order: [], openedAt: null, waiter: "Sardor", notes: "", discountPercent: 0 },
   { 
     id: 5, 
     name: "Stol 5", 
-    status: "occupied", 
+    status: "payment_pending", 
     order: [
-      { id: 'f1', name: 'Hot Dog', price: 18000, quantity: 2, category: 'food' },
-      { id: 'f2', name: 'Hamburger', price: 25000, quantity: 1, category: 'food' },
-      { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 1, category: 'drinks' }
+      { id: 'f2', name: 'Hamburger', price: 25000, quantity: 2, category: 'food' }
     ], 
-    openedAt: "13:45", 
+    openedAt: "13:30", 
     waiter: "Alisher", 
-    notes: "Ikkita stakan bering",
-    discountPercent: 0
+    notes: "Hisob so'radi", 
+    discountPercent: 0 
   },
   { id: 6, name: "Stol 6", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
   { 
     id: 7, 
     name: "Stol 7", 
-    status: "payment_pending", 
+    status: "occupied", 
     order: [
-      { id: 'f6', name: 'Pizza', price: 55000, quantity: 1, category: 'food' },
-      { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 1, category: 'food' },
-      { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 1, category: 'drinks' }
+      { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+      { id: 'f4', name: 'Lavash', price: 28000, quantity: 2, category: 'food' },
+      { id: 'd1', name: 'Fanta 0.5L', price: 7000, quantity: 2, category: 'drinks' }
     ], 
-    openedAt: "13:10", 
+    openedAt: "12:50", 
     waiter: "Malika", 
-    notes: "Hisob so'radi",
-    discountPercent: 0
+    notes: "", 
+    discountPercent: 0 
   },
   { id: 8, name: "Stol 8", status: "available", order: [], openedAt: null, waiter: "Bobur", notes: "", discountPercent: 0 },
   { id: 9, name: "Stol 9", status: "available", order: [], openedAt: null, waiter: "Jasur", notes: "", discountPercent: 0 },
-  { id: 10, name: "Stol 10", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 }
+  { 
+    id: 10, 
+    name: "Stol 10", 
+    status: "occupied", 
+    order: [
+      { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+      { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 1, category: 'food' }
+    ], 
+    openedAt: "13:00", 
+    waiter: "Alisher", 
+    notes: "", 
+    discountPercent: 0 
+  }
 ];
 
-// Initial Order History (Today's realistic orders)
+// Initial Order History: Realistic orders across today (1 kunlik), last 7 days (1 haftalik) and last 30 days (1 oylik)
 const getInitialHistory = () => {
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  const dateFormatted = formatDate(now);
-  
+  const formatIso = (daysAgo, hours, minutes) => {
+    const d = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+    d.setHours(hours, minutes, 0, 0);
+    return {
+      iso: d.toISOString(),
+      formatted: `${d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`,
+      dateOnly: d.toISOString().split('T')[0]
+    };
+  };
+
+  const t0_1 = formatIso(0, 10, 45);
+  const t0_2 = formatIso(0, 11, 30);
+  const t0_3 = formatIso(0, 12, 15);
+  const t0_4 = formatIso(0, 12, 55);
+  const t0_5 = formatIso(0, 13, 25);
+
+  const t1_1 = formatIso(1, 12, 10);
+  const t1_2 = formatIso(1, 14, 40);
+  const t1_3 = formatIso(1, 18, 20);
+  const t1_4 = formatIso(1, 20, 15);
+
+  const t2_1 = formatIso(2, 13, 0);
+  const t2_2 = formatIso(2, 16, 30);
+  const t2_3 = formatIso(2, 19, 45);
+
+  const t3_1 = formatIso(3, 11, 20);
+  const t3_2 = formatIso(3, 15, 10);
+  const t3_3 = formatIso(3, 18, 50);
+
+  const t5_1 = formatIso(5, 13, 15);
+  const t5_2 = formatIso(5, 17, 30);
+  const t5_3 = formatIso(5, 20, 40);
+
+  const t6_1 = formatIso(6, 12, 0);
+  const t6_2 = formatIso(6, 19, 10);
+
+  const t12_1 = formatIso(12, 13, 30);
+  const t12_2 = formatIso(12, 18, 0);
+
+  const t18_1 = formatIso(18, 14, 15);
+  const t18_2 = formatIso(18, 20, 0);
+
+  const t25_1 = formatIso(25, 12, 45);
+  const t25_2 = formatIso(25, 17, 20);
+
   return [
+    // --- BUGUNGI BUYURTMALAR (1 Kunlik) ---
     {
       id: "ORD-1091",
       tableId: 1,
@@ -348,9 +485,9 @@ const getInitialHistory = () => {
       paymentMethod: "Naqd pul",
       cashReceived: 100000,
       cashChange: 26000,
-      timestamp: `${todayStr}T10:45:00`,
-      formattedDate: `${dateFormatted}, 10:45`,
-      dateOnly: todayStr,
+      timestamp: t0_1.iso,
+      formattedDate: t0_1.formatted,
+      dateOnly: t0_1.dateOnly,
       waiter: "Alisher"
     },
     {
@@ -369,9 +506,9 @@ const getInitialHistory = () => {
       paymentMethod: "Plastik karta",
       cashReceived: 86000,
       cashChange: 0,
-      timestamp: `${todayStr}T11:30:00`,
-      formattedDate: `${dateFormatted}, 11:30`,
-      dateOnly: todayStr,
+      timestamp: t0_2.iso,
+      formattedDate: t0_2.formatted,
+      dateOnly: t0_2.dateOnly,
       waiter: "Sardor"
     },
     {
@@ -389,9 +526,9 @@ const getInitialHistory = () => {
       paymentMethod: "Naqd pul",
       cashReceived: 100000,
       cashChange: 1000,
-      timestamp: `${todayStr}T12:15:00`,
-      formattedDate: `${dateFormatted}, 12:15`,
-      dateOnly: todayStr,
+      timestamp: t0_3.iso,
+      formattedDate: t0_3.formatted,
+      dateOnly: t0_3.dateOnly,
       waiter: "Alisher"
     },
     {
@@ -410,9 +547,9 @@ const getInitialHistory = () => {
       paymentMethod: "Plastik karta",
       cashReceived: 120000,
       cashChange: 0,
-      timestamp: `${todayStr}T12:55:00`,
-      formattedDate: `${dateFormatted}, 12:55`,
-      dateOnly: todayStr,
+      timestamp: t0_4.iso,
+      formattedDate: t0_4.formatted,
+      dateOnly: t0_4.dateOnly,
       waiter: "Malika"
     },
     {
@@ -430,10 +567,441 @@ const getInitialHistory = () => {
       paymentMethod: "Naqd pul",
       cashReceived: 50000,
       cashChange: 20000,
-      timestamp: `${todayStr}T13:25:00`,
-      formattedDate: `${dateFormatted}, 13:25`,
-      dateOnly: todayStr,
+      timestamp: t0_5.iso,
+      formattedDate: t0_5.formatted,
+      dateOnly: t0_5.dateOnly,
       waiter: "Bobur"
+    },
+
+    // --- OXIRGI 7 KUNLIK (1 Haftalik) BUYURTMALAR ---
+    {
+      id: "ORD-1080",
+      tableId: 2,
+      tableName: "Stol 2",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 150000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 150000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 150000,
+      cashChange: 0,
+      timestamp: t1_1.iso,
+      formattedDate: t1_1.formatted,
+      dateOnly: t1_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1079",
+      tableId: 5,
+      tableName: "Stol 5",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 4, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 2, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 166000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 166000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 34000,
+      timestamp: t1_2.iso,
+      formattedDate: t1_2.formatted,
+      dateOnly: t1_2.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1078",
+      tableId: 7,
+      tableName: "Stol 7",
+      items: [
+        { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 3, category: 'food' },
+        { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 114000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 114000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 114000,
+      cashChange: 0,
+      timestamp: t1_3.iso,
+      formattedDate: t1_3.formatted,
+      dateOnly: t1_3.dateOnly,
+      waiter: "Malika"
+    },
+    {
+      id: "ORD-1077",
+      tableId: 9,
+      tableName: "Stol 9",
+      items: [
+        { id: 'f2', name: 'Hamburger', price: 25000, quantity: 4, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 4, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 1, category: 'drinks' }
+      ],
+      subtotal: 180000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 180000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 20000,
+      timestamp: t1_4.iso,
+      formattedDate: t1_4.formatted,
+      dateOnly: t1_4.dateOnly,
+      waiter: "Bobur"
+    },
+    {
+      id: "ORD-1075",
+      tableId: 3,
+      tableName: "Stol 3",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+        { id: 'c3', name: 'Kapuchino', price: 18000, quantity: 3, category: 'coffee' }
+      ],
+      subtotal: 164000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 164000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 164000,
+      cashChange: 0,
+      timestamp: t2_1.iso,
+      formattedDate: t2_1.formatted,
+      dateOnly: t2_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1074",
+      tableId: 1,
+      tableName: "Stol 1",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 5, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 176000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 176000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 24000,
+      timestamp: t2_2.iso,
+      formattedDate: t2_2.formatted,
+      dateOnly: t2_2.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1073",
+      tableId: 8,
+      tableName: "Stol 8",
+      items: [
+        { id: 'f1', name: 'Hot Dog', price: 18000, quantity: 4, category: 'food' },
+        { id: 'd5', name: 'Sharbat (Sok)', price: 12000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 96000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 96000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 96000,
+      cashChange: 0,
+      timestamp: t2_3.iso,
+      formattedDate: t2_3.formatted,
+      dateOnly: t2_3.dateOnly,
+      waiter: "Malika"
+    },
+    {
+      id: "ORD-1065",
+      tableId: 5,
+      tableName: "Stol 5",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 3, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 2, category: 'drinks' },
+        { id: 'c4', name: 'Chizkeyk', price: 24000, quantity: 3, category: 'coffee' }
+      ],
+      subtotal: 277000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 277000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 277000,
+      cashChange: 0,
+      timestamp: t3_1.iso,
+      formattedDate: t3_1.formatted,
+      dateOnly: t3_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1064",
+      tableId: 2,
+      tableName: "Stol 2",
+      items: [
+        { id: 'f2', name: 'Hamburger', price: 25000, quantity: 3, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 3, category: 'food' },
+        { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 144000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 144000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 150000,
+      cashChange: 6000,
+      timestamp: t3_2.iso,
+      formattedDate: t3_2.formatted,
+      dateOnly: t3_2.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1063",
+      tableId: 4,
+      tableName: "Stol 4",
+      items: [
+        { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 4, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 144000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 144000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 144000,
+      cashChange: 0,
+      timestamp: t3_3.iso,
+      formattedDate: t3_3.formatted,
+      dateOnly: t3_3.dateOnly,
+      waiter: "Bobur"
+    },
+    {
+      id: "ORD-1052",
+      tableId: 7,
+      tableName: "Stol 7",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 6, category: 'food' },
+        { id: 'd4', name: 'Suv (0.5L)', price: 5000, quantity: 6, category: 'drinks' }
+      ],
+      subtotal: 198000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 198000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 2000,
+      timestamp: t5_1.iso,
+      formattedDate: t5_1.formatted,
+      dateOnly: t5_1.dateOnly,
+      waiter: "Malika"
+    },
+    {
+      id: "ORD-1051",
+      tableId: 10,
+      tableName: "Stol 10",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 1, category: 'drinks' }
+      ],
+      subtotal: 130000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 130000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 130000,
+      cashChange: 0,
+      timestamp: t5_2.iso,
+      formattedDate: t5_2.formatted,
+      dateOnly: t5_2.dateOnly,
+      waiter: "Jasur"
+    },
+    {
+      id: "ORD-1050",
+      tableId: 1,
+      tableName: "Stol 1",
+      items: [
+        { id: 'f1', name: 'Hot Dog', price: 18000, quantity: 5, category: 'food' },
+        { id: 'd5', name: 'Sharbat (Sok)', price: 12000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 126000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 126000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 150000,
+      cashChange: 24000,
+      timestamp: t5_3.iso,
+      formattedDate: t5_3.formatted,
+      dateOnly: t5_3.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1045",
+      tableId: 3,
+      tableName: "Stol 3",
+      items: [
+        { id: 'f2', name: 'Hamburger', price: 25000, quantity: 4, category: 'food' },
+        { id: 'c2', name: 'Kofe Americano', price: 14000, quantity: 4, category: 'coffee' }
+      ],
+      subtotal: 156000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 156000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 156000,
+      cashChange: 0,
+      timestamp: t6_1.iso,
+      formattedDate: t6_1.formatted,
+      dateOnly: t6_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1044",
+      tableId: 6,
+      tableName: "Stol 6",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 3, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 179000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 179000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 21000,
+      timestamp: t6_2.iso,
+      formattedDate: t6_2.formatted,
+      dateOnly: t6_2.dateOnly,
+      waiter: "Alisher"
+    },
+
+    // --- OXIRGI 30 KUNLIK (1 Oylik) BUYURTMALAR ---
+    {
+      id: "ORD-1020",
+      tableId: 2,
+      tableName: "Stol 2",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 8, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 284000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 284000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 284000,
+      cashChange: 0,
+      timestamp: t12_1.iso,
+      formattedDate: t12_1.formatted,
+      dateOnly: t12_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1019",
+      tableId: 8,
+      tableName: "Stol 8",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 3, category: 'food' },
+        { id: 'c4', name: 'Chizkeyk', price: 24000, quantity: 5, category: 'coffee' }
+      ],
+      subtotal: 285000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 285000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 300000,
+      cashChange: 15000,
+      timestamp: t12_2.iso,
+      formattedDate: t12_2.formatted,
+      dateOnly: t12_2.dateOnly,
+      waiter: "Malika"
+    },
+    {
+      id: "ORD-1008",
+      tableId: 5,
+      tableName: "Stol 5",
+      items: [
+        { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 6, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 6, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 4, category: 'drinks' }
+      ],
+      subtotal: 318000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 318000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 318000,
+      cashChange: 0,
+      timestamp: t18_1.iso,
+      formattedDate: t18_1.formatted,
+      dateOnly: t18_1.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1007",
+      tableId: 7,
+      tableName: "Stol 7",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 4, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 280000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 280000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 300000,
+      cashChange: 20000,
+      timestamp: t18_2.iso,
+      formattedDate: t18_2.formatted,
+      dateOnly: t18_2.dateOnly,
+      waiter: "Bobur"
+    },
+    {
+      id: "ORD-0995",
+      tableId: 1,
+      tableName: "Stol 1",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 5, category: 'food' },
+        { id: 'f2', name: 'Hamburger', price: 25000, quantity: 4, category: 'food' },
+        { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 6, category: 'drinks' }
+      ],
+      subtotal: 288000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 288000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 288000,
+      cashChange: 0,
+      timestamp: t25_1.iso,
+      formattedDate: t25_1.formatted,
+      dateOnly: t25_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-0994",
+      tableId: 9,
+      tableName: "Stol 9",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 5, category: 'food' },
+        { id: 'c3', name: 'Kapuchino', price: 18000, quantity: 5, category: 'coffee' }
+      ],
+      subtotal: 365000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 365000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 400000,
+      cashChange: 35000,
+      timestamp: t25_2.iso,
+      formattedDate: t25_2.formatted,
+      dateOnly: t25_2.dateOnly,
+      waiter: "Jasur"
     }
   ];
 };
@@ -648,6 +1216,185 @@ const Icon = ({ name, className = "w-5 h-5", ...props }) => {
           <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
           <path d="M14 2v4a2 2 0 0 0 2 2h4" />
           <path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" />
+        </svg>
+      );
+    case 'volume':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+      );
+    case 'copy':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+        </svg>
+      );
+    case 'calendar':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+          <line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" />
+        </svg>
+      );
+    case 'speech':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          <path d="M8 9h8" />
+          <path d="M8 13h5" />
+        </svg>
+      );
+    case 'chair':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M6 19v2" />
+          <path d="M18 19v2" />
+          <path d="M6 11h12a2 2 0 0 1 2 2v6H4v-6a2 2 0 0 1 2-2Z" />
+          <path d="M6 11V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6" />
+        </svg>
+      );
+    case 'users':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      );
+    case 'coins':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <circle cx="8" cy="8" r="6" />
+          <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+          <path d="M7 6h1v4H7" />
+          <path d="m16.71 13.88.7.71-2.82 2.82" />
+        </svg>
+      );
+    case 'trend-up':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+          <polyline points="16 7 22 7 22 13" />
+        </svg>
+      );
+    case 'utensils':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2" />
+          <path d="M15 2v20" />
+          <path d="M5 2h4v7a2 2 0 0 1-2 2 2 2 0 0 1-2-2V2Z" />
+          <path d="M7 11v11" />
+        </svg>
+      );
+    case 'logout':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" x2="9" y1="12" y2="12" />
+        </svg>
+      );
+    case 'star':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" {...props}>
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      );
+    case 'mail':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect width="20" height="16" x="2" y="4" rx="2" />
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+        </svg>
+      );
+    case 'lock':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      );
+    case 'eye':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      );
+    case 'eye-off':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+          <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+          <line x1="2" x2="22" y1="2" y2="22" />
+        </svg>
+      );
+    case 'bell':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+        </svg>
+      );
+    case 'sun':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" /><path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" /><path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
+        </svg>
+      );
+    case 'crown':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 14.17a1 1 0 0 1-.98.804H5.833a1 1 0 0 1-.98-.804L2.019 6.019a.5.5 0 0 1 .798-.519l4.277 3.664a1 1 0 0 0 1.516-.294z" />
+          <path d="M5 21h14" />
+        </svg>
+      );
+    case 'dining-table':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          {/* Table top */}
+          <line x1="6" y1="12" x2="18" y2="12" strokeWidth="2.5" />
+          {/* Table leg */}
+          <line x1="12" y1="12" x2="12" y2="20" strokeWidth="2" />
+          <line x1="9" y1="20" x2="15" y2="20" strokeWidth="2" />
+          {/* Left Chair */}
+          <path d="M4 8v8M4 12h2" />
+          {/* Right Chair */}
+          <path d="M20 8v8M20 12h-2" />
+        </svg>
+      );
+    case 'gift':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect x="3" y="8" width="18" height="4" rx="1" />
+          <path d="M12 8v13" />
+          <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
+          <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
+        </svg>
+      );
+    case 'google':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor" {...props}>
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+        </svg>
+      );
+    case 'telegram':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor" {...props}>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" fill="#29B6F6"/>
         </svg>
       );
     default:
@@ -950,6 +1697,44 @@ const TableStatusBadge = ({ status }) => {
   }
 };
 
+// Cashier Avatar Component with Offline Fallback
+const CashierAvatar = ({ size = "w-10 h-10", className = "" }) => {
+  const [hasError, setHasError] = React.useState(false);
+
+  if (hasError) {
+    return (
+      <div className={`${size} rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-300 text-cafe-950 flex items-center justify-center font-black text-xs shadow-inner ${className}`}>
+        AG
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+      alt="Alisher"
+      onError={() => setHasError(true)}
+      className={`${size} rounded-full object-cover ${className}`}
+    />
+  );
+};
+
+// Coffee Branch & Leaf Decorative Watermark for Sidebar
+const CoffeeLeafWatermark = ({ className = "w-44 h-44 text-amber-500/15" }) => (
+  <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <g opacity="0.9">
+      <path d="M15 185 C35 125 85 95 175 45 C155 105 115 155 45 185 Z" fill="currentColor" />
+      <path d="M45 185 C65 130 115 95 175 45" stroke="#F59E0B" strokeWidth="1.5" strokeOpacity="0.35" />
+      <path d="M75 145 C95 150 115 142 140 120" stroke="#F59E0B" strokeWidth="1" strokeOpacity="0.25" />
+      <path d="M95 115 C115 120 130 112 150 90" stroke="#F59E0B" strokeWidth="1" strokeOpacity="0.25" />
+      <path d="M35 165 C10 135 18 85 78 45 C72 85 60 125 35 165 Z" fill="currentColor" opacity="0.65" />
+      <circle cx="168" cy="52" r="5" fill="#F59E0B" opacity="0.45" />
+      <circle cx="180" cy="62" r="4" fill="#F59E0B" opacity="0.35" />
+      <circle cx="68" cy="180" r="5" fill="#F59E0B" opacity="0.35" />
+    </g>
+  </svg>
+);
+
 // Dashboard Stat Card
 const StatCard = ({ title, value, subtext, icon, trend, color = "amber" }) => {
   const colorMap = {
@@ -977,6 +1762,414 @@ const StatCard = ({ title, value, subtext, icon, trend, color = "amber" }) => {
             {subtext}
           </p>
         )}
+      </div>
+    </div>
+  );
+};
+
+// LOGIN PAGE COMPONENT (Matching screenshot bottom-left)
+const LoginPage = ({ onLoginSuccess, onGoToRegister, onBackToApp }) => {
+  const [email, setEmail] = React.useState('alisher@rayhon.uz');
+  const [password, setPassword] = React.useState('123456');
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [rememberMe, setRememberMe] = React.useState(true);
+  const [error, setError] = React.useState('');
+
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (!email || !password) {
+      setError("Iltimos, email va parolni kiriting");
+      return;
+    }
+    const user = {
+      name: email.includes('alisher') ? "Alisher Gayratov" : "Kassir Foydalanuvchi",
+      email: email,
+      role: "Kassir",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+    };
+    try {
+      localStorage.setItem('RAYHON_CAFE_AUTH_USER', JSON.stringify(user));
+    } catch(e) {}
+    playSound('cash');
+    onLoginSuccess(user);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#EDE5D8] flex items-center justify-center p-3 sm:p-6 lg:p-8 animate-fade-in">
+      <div className="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-stone-200/80 grid grid-cols-1 md:grid-cols-2 relative">
+        
+        {/* Quick Back to App Button (if user already logged in) */}
+        {onBackToApp && (
+          <button
+            onClick={onBackToApp}
+            className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition flex items-center gap-1"
+          >
+            <span>Boshqaruvga qaytish</span>
+            <Icon name="arrow-right" className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Left Side: Brand Showcase with Coffee Cup */}
+        <div className="relative bg-[#170E08] text-white p-7 sm:p-10 flex flex-col justify-between overflow-hidden min-h-[340px] md:min-h-[520px]">
+          {/* Background image & gradient */}
+          <img
+            src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80"
+            alt="Cafe"
+            className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-luminosity"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#1C120B]/95 via-[#23150C]/90 to-[#120A05]/95 pointer-events-none"></div>
+
+          {/* Brand header */}
+          <div className="relative z-10 text-center flex flex-col items-center">
+            <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-300 text-stone-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/30 mb-2.5 p-2.5">
+              <Icon name="coffee-cup" className="w-7 h-7" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-wide text-white">Rayhon Cafe</h1>
+            <p className="text-amber-400/90 text-xs font-semibold mt-1">Har doim siz bilan!</p>
+          </div>
+
+          {/* Center Latte Art Cup Illustration */}
+          <div className="relative z-10 my-4 flex items-center justify-center">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-[#3D2516] to-[#1E110A] p-2 shadow-2xl border-2 border-amber-500/30 flex items-center justify-center relative">
+              <div className="w-full h-full rounded-full bg-[#180E08] border border-amber-900/60 p-2 flex items-center justify-center">
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#4F301D] to-[#2B180E] flex items-center justify-center relative shadow-inner">
+                  <div className="w-12 h-12 rounded-full bg-[#D4A373] flex items-center justify-center shadow-inner">
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 text-white drop-shadow" fill="currentColor">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <span className="absolute -top-2.5 left-1/3 w-1 h-3.5 bg-white/25 rounded-full animate-pulse"></span>
+              <span className="absolute -top-3.5 right-1/3 w-1.5 h-4 bg-white/30 rounded-full animate-pulse delay-100"></span>
+            </div>
+          </div>
+
+          <div className="relative z-10 text-center text-stone-400 text-xs">
+            Boshqaruv tizimiga xavfsiz ulanish
+          </div>
+        </div>
+
+        {/* Right Side: Login Form */}
+        <div className="p-7 sm:p-10 flex flex-col justify-center bg-white">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-black text-stone-900 tracking-tight">Tizimga kirish</h2>
+            <p className="text-xs text-stone-500 mt-1">Hisobingizga kirish uchun ma’lumotlarni kiriting</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold text-center">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email Field */}
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
+                <Icon name="mail" className="w-5 h-5" />
+              </div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email manzilingiz"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-stone-50/80 border border-stone-200 text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              />
+            </div>
+
+            {/* Password Field */}
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
+                <Icon name="lock" className="w-5 h-5" />
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Parol"
+                className="w-full pl-11 pr-11 py-3 rounded-2xl bg-stone-50/80 border border-stone-200 text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
+              >
+                <Icon name={showPassword ? "eye-off" : "eye"} className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Remember & Forgot */}
+            <div className="flex items-center justify-between text-xs pt-0.5">
+              <label className="flex items-center gap-2 cursor-pointer text-stone-600 select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4"
+                />
+                <span>Meni eslab qolish</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => alert("Parolni tiklash uchun administratorga murojaat qiling.")}
+                className="text-amber-700 hover:text-amber-800 font-bold"
+              >
+                Parolni unutdingizmi?
+              </button>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition"
+            >
+              <span>Kirish</span>
+              <Icon name="arrow-right" className="w-4 h-4" />
+            </button>
+          </form>
+
+          {/* Social login divider */}
+          <div className="relative my-4 text-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-stone-200"></div>
+            </div>
+            <span className="relative px-3 bg-white text-xs text-stone-400 font-medium">
+              yoki
+            </span>
+          </div>
+
+          {/* Social Login Buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="py-2.5 px-3 rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center justify-center gap-2 transition"
+            >
+              <Icon name="google" className="w-4 h-4" />
+              <span>Google bilan</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="py-2.5 px-3 rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center justify-center gap-2 transition"
+            >
+              <Icon name="telegram" className="w-4 h-4" />
+              <span>Telegram bilan</span>
+            </button>
+          </div>
+
+          {/* Switch to Register */}
+          <div className="text-center mt-5 text-xs text-stone-600">
+            Hisobingiz yo‘qmi?{' '}
+            <button
+              type="button"
+              onClick={onGoToRegister}
+              className="text-amber-700 hover:text-amber-800 font-extrabold underline ml-1"
+            >
+              Ro‘yxatdan o‘ting
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+// REGISTER PAGE COMPONENT (Matching screenshot bottom-right)
+const RegisterPage = ({ onRegisterSuccess, onGoToLogin, onBackToApp }) => {
+  const [fullName, setFullName] = React.useState('Alisher Gayratov');
+  const [email, setEmail] = React.useState('alisher@rayhon.uz');
+  const [password, setPassword] = React.useState('123456');
+  const [confirmPassword, setConfirmPassword] = React.useState('123456');
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (!fullName || !email || !password) {
+      setError("Iltimos, barcha maydonlarni to‘ldiring");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Parollar mos kelmadi");
+      return;
+    }
+    const user = {
+      name: fullName,
+      email: email,
+      role: "Kassir",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+    };
+    try {
+      localStorage.setItem('RAYHON_CAFE_AUTH_USER', JSON.stringify(user));
+    } catch(e) {}
+    playSound('cash');
+    onRegisterSuccess(user);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#EDE5D8] flex items-center justify-center p-3 sm:p-6 lg:p-8 animate-fade-in">
+      <div className="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-stone-200/80 grid grid-cols-1 md:grid-cols-2 relative">
+        
+        {/* Quick Back to App Button (if user already logged in) */}
+        {onBackToApp && (
+          <button
+            onClick={onBackToApp}
+            className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition flex items-center gap-1"
+          >
+            <span>Boshqaruvga qaytish</span>
+            <Icon name="arrow-right" className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Left Side: Brand Showcase */}
+        <div className="relative bg-[#170E08] text-white p-7 sm:p-10 flex flex-col justify-between overflow-hidden min-h-[340px] md:min-h-[540px]">
+          <img
+            src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80"
+            alt="Cafe"
+            className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-luminosity"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#1C120B]/95 via-[#23150C]/90 to-[#120A05]/95 pointer-events-none"></div>
+
+          <div className="relative z-10 text-center flex flex-col items-center">
+            <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-300 text-stone-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/30 mb-2.5 p-2.5">
+              <Icon name="coffee-cup" className="w-7 h-7" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-wide text-white">Rayhon Cafe</h1>
+            <p className="text-amber-400/90 text-xs font-semibold mt-1">Yangi hisob oching</p>
+          </div>
+
+          <div className="relative z-10 my-4 flex items-center justify-center">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-[#3D2516] to-[#1E110A] p-2 shadow-2xl border-2 border-amber-500/30 flex items-center justify-center relative">
+              <div className="w-full h-full rounded-full bg-[#180E08] border border-amber-900/60 p-2 flex items-center justify-center">
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#4F301D] to-[#2B180E] flex items-center justify-center relative shadow-inner">
+                  <div className="w-12 h-12 rounded-full bg-[#D4A373] flex items-center justify-center shadow-inner">
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 text-white drop-shadow" fill="currentColor">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <span className="absolute -top-2.5 left-1/3 w-1 h-3.5 bg-white/25 rounded-full animate-pulse"></span>
+              <span className="absolute -top-3.5 right-1/3 w-1.5 h-4 bg-white/30 rounded-full animate-pulse delay-100"></span>
+            </div>
+          </div>
+
+          <div className="relative z-10 text-center text-stone-400 text-xs">
+            Xush kelibsiz! Tizimga a’zo bo‘ling
+          </div>
+        </div>
+
+        {/* Right Side: Register Form */}
+        <div className="p-7 sm:p-10 flex flex-col justify-center bg-white">
+          <div className="text-center mb-5">
+            <h2 className="text-2xl font-black text-stone-900 tracking-tight">Ro‘yxatdan o‘tish</h2>
+            <p className="text-xs text-stone-500 mt-1">Yangi hisob yaratish uchun ma’lumotlarni kiriting</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold text-center">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            {/* Full Name */}
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
+                <Icon name="user" className="w-5 h-5" />
+              </div>
+              <input
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="To‘liq ism"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-stone-50/80 border border-stone-200 text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              />
+            </div>
+
+            {/* Email */}
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
+                <Icon name="mail" className="w-5 h-5" />
+              </div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email manzilingiz"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-stone-50/80 border border-stone-200 text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              />
+            </div>
+
+            {/* Password */}
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
+                <Icon name="lock" className="w-5 h-5" />
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Parol"
+                className="w-full pl-11 pr-11 py-3 rounded-2xl bg-stone-50/80 border border-stone-200 text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
+              >
+                <Icon name={showPassword ? "eye-off" : "eye"} className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
+                <Icon name="lock" className="w-5 h-5" />
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Parolni tasdiqlang"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-stone-50/80 border border-stone-200 text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="w-full mt-2 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition"
+            >
+              <span>Ro‘yxatdan o‘tish</span>
+              <Icon name="arrow-right" className="w-4 h-4" />
+            </button>
+          </form>
+
+          {/* Switch to Login */}
+          <div className="text-center mt-5 text-xs text-stone-600">
+            Allaqachon hisobingiz bormi?{' '}
+            <button
+              type="button"
+              onClick={onGoToLogin}
+              className="text-amber-700 hover:text-amber-800 font-extrabold underline ml-1"
+            >
+              Kirish
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -1697,252 +2890,659 @@ const ReceiptModal = ({ isOpen, order, settings, onClose }) => {
   );
 };
 
+// Customer Bill / Pre-Check Modal: Mijoz nima yeganini hisoblash va mijozga aytish oynasi
+const CustomerBillModal = ({
+  isOpen,
+  table,
+  settings,
+  onClose,
+  onProceedToPayment
+}) => {
+  const [copied, setCopied] = React.useState(false);
+  const [isSpeaking, setIsSpeaking] = React.useState(false);
 
-// 1. DASHBOARD VIEW
+  if (!isOpen || !table) return null;
+
+  const orderItems = table.order || [];
+  const subtotal = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const serviceAmount = Math.round(subtotal * ((settings.serviceFeePercent || 0) / 100));
+  const discountAmount = Math.round(subtotal * ((table.discountPercent || 0) / 100));
+  const grandTotal = Math.max(0, subtotal + serviceAmount - discountAmount);
+
+  // Generate plain speech text in Uzbek
+  const itemsSpeech = orderItems.map(i => `${i.quantity} ta ${i.name} (${formatUZS(i.price * i.quantity)})`).join(', ');
+  const speechText = orderItems.length > 0 
+    ? `Hurmatli mijoz! Sizning ${table.name}dagi buyurtmangiz: ${itemsSpeech}. Jami to‘lov: ${formatUZS(grandTotal)} bo‘ldi.`
+    : `Hurmatli mijoz! ${table.name}da hozircha hech qanday buyurtma mavjud emas.`;
+
+  const handleSpeak = () => {
+    playSound('add');
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(speechText);
+      utterance.lang = 'uz-UZ';
+      utterance.rate = 0.95;
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Brauzeringiz ovozli eshittirishni qo'llab-quvvatlamaydi.");
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(speechText);
+    setCopied(true);
+    playSound('click');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-950/75 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-modal border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-stone-100 no-print">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-cafe-950 flex items-center justify-center font-extrabold text-lg shadow-md">
+              {table.id}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-extrabold text-stone-900">{table.name} — Mijoz hisobi</h3>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                  {orderItems.reduce((acc, i) => acc + i.quantity, 0)} ta taom
+                </span>
+              </div>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Ofitsiant: <b className="text-stone-700">{table.waiter || "Alisher"}</b>
+                {table.openedAt && <span className="ml-2">| Ochilgan vaqti: <b className="text-stone-700">{table.openedAt}</b></span>}
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-100 transition"
+          >
+            <Icon name="close" className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content Body */}
+        <div className="flex-1 overflow-y-auto my-4 space-y-4 pr-1">
+          
+          {/* Grand Total Banner */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent border-2 border-amber-300/80 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-amber-800 uppercase tracking-wider block">Mijoz to‘lashi kerak bo‘lgan summa:</span>
+              <span className="text-2xl sm:text-3xl font-black font-mono text-cafe-950 text-amber-900 mt-0.5 block">
+                {formatUZS(grandTotal)}
+              </span>
+            </div>
+            <div className="p-3 bg-amber-500 text-cafe-950 rounded-2xl shadow-sm">
+              <Icon name="cash" className="w-7 h-7" />
+            </div>
+          </div>
+
+          {/* List of items customer consumed */}
+          <div>
+            <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2.5">
+              Mijoz nimalar iste'mol qildi (Buyurtma tafsiloti):
+            </h4>
+            
+            {orderItems.length > 0 ? (
+              <div className="bg-stone-50 rounded-2xl border border-stone-200 divide-y divide-stone-200/60 overflow-hidden">
+                {orderItems.map((item, idx) => (
+                  <div key={idx} className="p-3.5 flex items-center justify-between gap-3 hover:bg-white transition">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-stone-200 flex items-center justify-center shrink-0">
+                        <FoodIcon name={item.icon} className="w-8 h-8" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-extrabold text-stone-900 text-sm truncate">{item.name}</h5>
+                        <p className="text-xs text-stone-500 font-mono">
+                          {item.quantity} ta × {formatUZS(item.price)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right font-mono font-black text-sm text-stone-900 whitespace-nowrap">
+                      {formatUZS(item.price * item.quantity)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-6 text-center text-stone-400 bg-stone-50 rounded-2xl border border-stone-200">
+                Ushbu stolda hozircha buyurtma yo‘q.
+              </div>
+            )}
+          </div>
+
+          {/* Calculations Summary */}
+          {orderItems.length > 0 && (
+            <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5 text-xs">
+              <div className="flex justify-between text-stone-600">
+                <span>Oraliq summa (Taomlar narxi):</span>
+                <span className="font-mono font-bold text-stone-800">{formatUZS(subtotal)}</span>
+              </div>
+              {serviceAmount > 0 && (
+                <div className="flex justify-between text-stone-600">
+                  <span>Xizmat haqi ({settings.serviceFeePercent}%):</span>
+                  <span className="font-mono font-bold text-stone-800">+{formatUZS(serviceAmount)}</span>
+                </div>
+              )}
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-emerald-700 font-medium">
+                  <span>Chegirma ({table.discountPercent}%):</span>
+                  <span className="font-mono font-bold">-{formatUZS(discountAmount)}</span>
+                </div>
+              )}
+              <div className="pt-2 border-t border-stone-200 flex justify-between items-baseline text-sm font-black text-stone-900">
+                <span>JAMI TO‘LOV:</span>
+                <span className="font-mono text-base text-amber-800">{formatUZS(grandTotal)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Verbal Script Box (Mijozga aytish uchun tayyor matn) */}
+          <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 uppercase">
+                <Icon name="speech" className="w-4 h-4 text-amber-700" />
+                <span>Mijozga aytish uchun tayyor matn:</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleCopy}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-[11px] font-bold text-amber-900 hover:bg-amber-100 flex items-center gap-1 transition shadow-xs"
+                  title="Matnni nusxalash"
+                >
+                  <Icon name={copied ? 'check' : 'copy'} className="w-3.5 h-3.5 text-amber-700" />
+                  <span>{copied ? 'Nusxalandi!' : 'Nusxa olish'}</span>
+                </button>
+                <button
+                  onClick={handleSpeak}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition shadow-xs ${
+                    isSpeaking 
+                      ? 'bg-amber-600 text-white animate-pulse' 
+                      : 'bg-amber-600 hover:bg-amber-700 text-white'
+                  }`}
+                  title="Ovoz chiqarib aytish"
+                >
+                  <Icon name="volume" className="w-3.5 h-3.5" />
+                  <span>{isSpeaking ? 'Gapirilmoqda...' : 'Ovozli aytish'}</span>
+                </button>
+              </div>
+            </div>
+            
+            <p className="text-xs font-medium text-amber-950 bg-white/80 p-3 rounded-xl border border-amber-200/60 leading-relaxed italic">
+              "{speechText}"
+            </p>
+          </div>
+
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-3 border-t border-stone-200 flex flex-wrap items-center gap-2.5 no-print">
+          <button
+            onClick={() => window.print()}
+            className="flex-1 py-3 px-3 rounded-2xl border border-stone-300 hover:bg-stone-100 font-bold text-stone-700 text-xs flex items-center justify-center gap-1.5 transition"
+          >
+            <Icon name="printer" className="w-4 h-4" />
+            <span>Pre-chek chiqarish</span>
+          </button>
+          <button
+            disabled={orderItems.length === 0}
+            onClick={() => {
+              onClose();
+              onProceedToPayment(table);
+            }}
+            className="flex-1 py-3 px-4 rounded-2xl bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-extrabold text-xs shadow-lg shadow-amber-600/25 flex items-center justify-center gap-1.5 transition"
+          >
+            <Icon name="cash" className="w-4 h-4" />
+            <span>To‘lovni qabul qilish</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+
+// 1. DASHBOARD VIEW (Matching the new premium layout from screenshot)
 const DashboardView = ({ 
   tables, 
   products, 
   orderHistory, 
   onSelectTable, 
   onOpenReceipt,
-  onNavigateTab
+  onNavigateTab,
+  onOpenCustomerBill
 }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayOrders = orderHistory.filter(o => o.dateOnly === todayStr || (o.timestamp && o.timestamp.startsWith(todayStr)));
+  const revenueMetrics = calculateRevenueMetrics(orderHistory);
 
   const totalTables = tables.length;
   const occupiedCount = tables.filter(t => t.status === 'occupied').length;
   const pendingCount = tables.filter(t => t.status === 'payment_pending').length;
   const availableCount = tables.filter(t => t.status === 'available').length;
 
-  const todaySales = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-  const todayOrdersCount = todayOrders.length;
-  const avgCheck = todayOrdersCount > 0 ? Math.round(todaySales / todayOrdersCount) : 0;
-
-  // Active current ongoing revenue on active tables
-  const activeUnpaidSales = tables.reduce((acc, t) => {
-    return acc + (t.order || []).reduce((s, item) => s + (item.price * item.quantity), 0);
-  }, 0);
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-cafe-900 via-cafe-800 to-amber-900 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="relative z-10 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold mb-3">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            Bugungi smena faol
+      {/* 1. TOP ROW: PANORAMA BANNER (LEFT) + BUGUNGI DAROMAD WITH GOLDEN WAVE (RIGHT) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        {/* Left Hero Card (~70% width) */}
+        <div className="lg:col-span-8 relative rounded-3xl overflow-hidden shadow-sm bg-[#160E08] text-white p-6 sm:p-7 flex items-center justify-between min-h-[160px]">
+          {/* Real Cafe Photography with cozy bokeh */}
+          <img 
+            src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1400&q=80" 
+            alt="Rayhon Cafe"
+            className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-luminosity filter blur-[0.5px]"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#170E08]/95 via-[#23150C]/90 to-[#120B06]/85 pointer-events-none"></div>
+
+          <div className="relative z-10 max-w-md">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold mb-2 shadow-xs">
+              <Icon name="star" className="w-3.5 h-3.5 text-amber-400" />
+              <span>Rayhon Cafe</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
+              Yaxshi kayfiyat,<br />mazali taom!
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-300 font-medium mt-1.5 flex items-center gap-1">
+              <span>Bizning kafeda har doim iliq muhit</span>
+              <span>🌿</span>
+            </p>
           </div>
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Xush kelibsiz! Kafe boshqaruv tizimi
-          </h2>
-          <p className="text-stone-300 text-sm mt-2 leading-relaxed">
-            Hozirda <b className="text-amber-300">{occupiedCount + pendingCount} ta</b> stolda mijozlar xizmat ko‘rmoqda. 
-            Bugungi kassa tushumi: <b className="text-white font-mono">{formatUZS(todaySales)}</b>
-          </p>
-        </div>
 
-        <div className="relative z-10 flex flex-wrap gap-3">
-          <button
-            onClick={() => onNavigateTab('tables')}
-            className="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-cafe-950 font-extrabold text-sm shadow-lg shadow-amber-500/30 flex items-center gap-2 transition"
-          >
-            <Icon name="tables" className="w-4 h-4" />
-            <span>Stollarni boshqarish</span>
-          </button>
-          <button
-            onClick={() => onNavigateTab('menu')}
-            className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm backdrop-blur-sm border border-white/20 flex items-center gap-2 transition"
-          >
-            <Icon name="menu" className="w-4 h-4" />
-            <span>Menyuni ko‘rish</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 6 Key Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
-        <StatCard
-          title="Jami stollar"
-          value={`${totalTables} ta`}
-          subtext="Doimiy sig‘im"
-          icon="tables"
-          color="cafe"
-        />
-        <StatCard
-          title="Band stollar"
-          value={`${occupiedCount} ta`}
-          subtext={`${Math.round((occupiedCount / totalTables) * 100)}% bandlik`}
-          icon="user"
-          color="amber"
-        />
-        <StatCard
-          title="Bo‘sh stollar"
-          value={`${availableCount} ta`}
-          subtext="Mijoz qabuliga tayyor"
-          icon="check"
-          color="emerald"
-        />
-        <StatCard
-          title="Bugungi jami savdo"
-          value={formatUZS(todaySales)}
-          subtext="Bajarilgan buyurtmalar"
-          icon="cash"
-          color="amber"
-        />
-        <StatCard
-          title="Bugungi buyurtmalar"
-          value={`${todayOrdersCount} ta`}
-          subtext="Kassadan o‘tgan"
-          icon="history"
-          color="indigo"
-        />
-        <StatCard
-          title="O‘rtacha chek"
-          value={formatUZS(avgCheck)}
-          subtext="Bitta buyurtmaga"
-          icon="stats"
-          color="orange"
-        />
-      </div>
-
-      {/* Real-time Tables Quick Matrix */}
-      <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-          <div>
-            <h3 className="text-lg font-extrabold text-stone-900">Stollar holati (1–10)</h3>
-            <p className="text-xs text-stone-500">Ixtiyoriy stol ustiga bosib, tezkor buyurtma paneli yoki hisobni oching</p>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Bo‘sh: {availableCount}
-            </span>
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span> Band: {occupiedCount}
-            </span>
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-              <span className="w-2 h-2 rounded-full bg-purple-500"></span> Kutilmoqda: {pendingCount}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
-          {tables.map(table => {
-            const tableTotal = (table.order || []).reduce((s, i) => s + (i.price * i.quantity), 0);
-            const itemsCount = (table.order || []).reduce((s, i) => s + i.quantity, 0);
-
-            let borderClass = "border-stone-200 hover:border-emerald-400 bg-stone-50/50";
-            if (table.status === 'occupied') {
-              borderClass = "border-amber-400 ring-1 ring-amber-400/40 bg-amber-50/40";
-            } else if (table.status === 'payment_pending') {
-              borderClass = "border-purple-400 ring-1 ring-purple-400/40 bg-purple-50/40";
-            }
-
-            return (
-              <div
-                key={table.id}
-                onClick={() => onSelectTable(table.id)}
-                className={`p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer hover:shadow-md flex flex-col justify-between ${borderClass}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-9 h-9 rounded-xl bg-cafe-800 text-amber-300 font-extrabold flex items-center justify-center text-sm shadow-sm">
-                    {table.id}
+          {/* Latte Art Cup with Saucer and Roasted Beans (Exact matching illustration) */}
+          <div className="hidden sm:flex items-center justify-center shrink-0 relative z-10 pr-2">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-[#3D2516] to-[#1E110A] p-2 shadow-2xl border-2 border-amber-500/30 flex items-center justify-center relative">
+              <div className="w-full h-full rounded-full bg-[#180E08] border border-amber-900/60 p-2 flex items-center justify-center">
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#4F301D] to-[#2B180E] flex items-center justify-center relative shadow-inner">
+                  <div className="w-11 h-11 rounded-full bg-[#D4A373] flex items-center justify-center shadow-inner">
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 text-white drop-shadow" fill="currentColor">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
                   </div>
-                  <TableStatusBadge status={table.status} />
-                </div>
-
-                <div className="my-2">
-                  <h5 className="font-extrabold text-stone-900 text-sm">{table.name}</h5>
-                  {table.status !== 'available' ? (
-                    <div className="mt-1">
-                      <p className="text-[11px] text-stone-500">{itemsCount} ta mahsulot</p>
-                      <p className="text-xs font-bold font-mono text-cafe-900 text-amber-800">
-                        {formatUZS(tableTotal)}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-emerald-600 font-medium mt-1">Buyurtma uchun bo‘sh</p>
-                  )}
-                </div>
-
-                <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-[11px] font-semibold text-stone-600">
-                  <span>{table.status === 'available' ? '+ Ochish' : 'Ko‘rish'}</span>
-                  <Icon name="arrow-right" className="w-3.5 h-3.5" />
                 </div>
               </div>
-            );
-          })}
+              <span className="absolute -top-2 left-1/3 w-1.5 h-3 bg-white/25 rounded-full animate-pulse"></span>
+              <span className="absolute -top-3 right-1/3 w-1.5 h-4 bg-white/30 rounded-full animate-pulse delay-100"></span>
+            </div>
+          </div>
         </div>
+
+        {/* Right "Bugungi daromad" Card (~30% width) with Golden Glowing Wave */}
+        <div className="lg:col-span-4 bg-[#1C120B] text-white rounded-3xl p-5 border border-stone-800 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="flex items-center justify-between mb-1 relative z-10">
+            <span className="text-xs font-bold text-stone-300 flex items-center gap-1.5">
+              <Icon name="trend-up" className="w-4 h-4 text-amber-400" />
+              <span>Bugungi daromad</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              +12%
+            </span>
+          </div>
+
+          <div className="my-2 relative z-10">
+            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+              {formatUZS(revenueMetrics.today.sales)}
+            </div>
+          </div>
+
+          {/* Golden Glowing Sparkline Area Wave */}
+          <div className="h-12 w-full relative mt-1 overflow-hidden pointer-events-none z-0">
+            <svg viewBox="0 0 300 80" className="w-full h-full" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="amberWaveGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.45" />
+                  <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M0,60 Q40,65 75,45 T150,50 T225,25 T300,35 L300,80 L0,80 Z"
+                fill="url(#amberWaveGrad)"
+              />
+              <path
+                d="M0,60 Q40,65 75,45 T150,50 T225,25 T300,35"
+                fill="none"
+                stroke="#FBBF24"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        </div>
+
       </div>
 
-      {/* Recent Orders List */}
-      <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-extrabold text-stone-900">Oxirgi yakunlangan buyurtmalar</h3>
-            <p className="text-xs text-stone-500">Bugun amalga oshirilgan to‘lovlar ro‘yxati</p>
+      {/* 2. REVENUE CARDS ROW: 1 KUNLIK, 1 HAFTALIK, 1 OYLIK + KASSIR KIMLIGI */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Card 1: 1 Kunlik */}
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-800 flex items-center justify-center">
+                <Icon name="calendar" className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-stone-600">1 Kunlik</span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+              ↑ +12%
+            </span>
           </div>
-          <button
-            onClick={() => onNavigateTab('history')}
-            className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
-          >
-            <span>Barchasini ko‘rish</span>
-            <Icon name="arrow-right" className="w-3.5 h-3.5" />
-          </button>
+          <div className="text-lg sm:text-xl font-black font-mono text-stone-900 mt-2">
+            {formatUZS(revenueMetrics.today.sales)}
+          </div>
+          {/* Subtle bottom wave */}
+          <div className="h-4 w-full mt-2 overflow-hidden opacity-60">
+            <svg viewBox="0 0 200 30" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0,15 Q50,5 100,18 T200,12 L200,30 L0,30 Z" fill="#FDE68A" fillOpacity="0.5" />
+            </svg>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-stone-200 text-stone-400 font-semibold">
-                <th className="py-2.5 px-3">Chek №</th>
-                <th className="py-2.5 px-3">Stol</th>
-                <th className="py-2.5 px-3">Mahsulotlar</th>
-                <th className="py-2.5 px-3">To‘lov turi</th>
-                <th className="py-2.5 px-3">Vaqt</th>
-                <th className="py-2.5 px-3 text-right">Summa</th>
-                <th className="py-2.5 px-3 text-center">Amal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100 text-stone-700">
-              {todayOrders.slice(0, 5).map(order => (
-                <tr key={order.id} className="hover:bg-stone-50/80 transition">
-                  <td className="py-3 px-3 font-mono font-bold text-stone-900">{order.id}</td>
-                  <td className="py-3 px-3 font-semibold text-stone-800">{order.tableName}</td>
-                  <td className="py-3 px-3 text-stone-600 max-w-xs truncate">
-                    {(order.items || []).map(i => `${i.name} × ${i.quantity}`).join(', ')}
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold text-[11px] ${
-                      order.paymentMethod === 'Naqd pul' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
-                    }`}>
-                      {order.paymentMethod}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-stone-500">{order.formattedDate}</td>
-                  <td className="py-3 px-3 font-mono font-bold text-stone-900 text-right">
-                    {formatUZS(order.total)}
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <button
-                      onClick={() => onOpenReceipt(order)}
-                      className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold transition"
-                      title="Chekni ko'rish"
-                    >
-                      Chek
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {todayOrders.length === 0 && (
-            <div className="text-center py-8 text-stone-400 text-sm">
-              Bugun hali buyurtmalar yakunlanmagan
+        {/* Card 2: 1 Haftalik */}
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-800 flex items-center justify-center">
+                <Icon name="calendar" className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-stone-600">1 Haftalik</span>
             </div>
-          )}
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+              ↑ +8%
+            </span>
+          </div>
+          <div className="text-lg sm:text-xl font-black font-mono text-stone-900 mt-2">
+            {formatUZS(revenueMetrics.week.sales)}
+          </div>
+          {/* Subtle bottom wave */}
+          <div className="h-4 w-full mt-2 overflow-hidden opacity-60">
+            <svg viewBox="0 0 200 30" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0,15 Q50,8 100,20 T200,10 L200,30 L0,30 Z" fill="#FDE68A" fillOpacity="0.5" />
+            </svg>
+          </div>
         </div>
+
+        {/* Card 3: 1 Oylik */}
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-800 flex items-center justify-center">
+                <Icon name="calendar" className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-stone-600">1 Oylik</span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+              ↑ +15%
+            </span>
+          </div>
+          <div className="text-lg sm:text-xl font-black font-mono text-stone-900 mt-2">
+            {formatUZS(revenueMetrics.month.sales)}
+          </div>
+          {/* Subtle bottom wave */}
+          <div className="h-4 w-full mt-2 overflow-hidden opacity-60">
+            <svg viewBox="0 0 200 30" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0,15 Q50,5 100,16 T200,14 L200,30 L0,30 Z" fill="#FDE68A" fillOpacity="0.5" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Card 4: Kassir kimligi */}
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+              <Icon name="crown" className="w-4 h-4 text-amber-600" />
+              <span>Kassir kimligi</span>
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 mt-2">
+            <div className="flex items-center gap-2.5">
+              <CashierAvatar size="w-10 h-10" className="border-2 border-stone-100 shadow-xs" />
+              <div>
+                <h5 className="font-extrabold text-xs text-stone-900 leading-tight">
+                  Alisher Gayratov
+                </h5>
+                <p className="text-[10px] text-stone-400 font-medium">Kassir</p>
+              </div>
+            </div>
+
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot"></span>
+              <span>Onlayn</span>
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 3. MAIN SECTION: STOLLAR (1-10) [LEFT] + SO'NGGI FAOLIYAT [RIGHT] */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        {/* Left Column: Stollar (1-10) Grid (~70% width) */}
+        <div className="lg:col-span-8 bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div>
+            {/* Header row */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-amber-50 text-amber-800">
+                  <Icon name="chair" className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-black text-stone-900 tracking-tight">
+                  Stollar (1-10)
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-xs font-bold">
+                  <span className="flex items-center gap-1 text-stone-600">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Bo‘sh
+                  </span>
+                  <span className="flex items-center gap-1 text-stone-600">
+                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                    Band
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => onNavigateTab('tables')}
+                  className="text-xs font-bold text-stone-500 hover:text-amber-800 flex items-center gap-1 transition ml-2"
+                >
+                  <span>Barchasini ko‘rish</span>
+                  <span className="text-amber-600">→</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 10 Tables Grid (Exact 2 rows of 5 cards with Dining Table SVG) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-3.5">
+              {tables.slice(0, 10).map((table, idx) => {
+                const isOccupied = table.status === 'occupied' || table.status === 'payment_pending';
+                const guestCount = idx === 0 ? 3 : idx === 3 ? 2 : idx === 6 ? 4 : idx === 9 ? 2 : 2;
+
+                return (
+                  <div
+                    key={table.id}
+                    onClick={() => onSelectTable(table.id)}
+                    className="rounded-2xl border border-stone-200/90 bg-white p-3 flex flex-col justify-between hover:shadow-md hover:border-amber-400 transition cursor-pointer group"
+                  >
+                    <div>
+                      {/* Top: Black Badge + Dining Table Icon + Status Pill */}
+                      <div className="flex items-center justify-between">
+                        <span className="w-5 h-5 rounded-md bg-stone-900 text-white font-black text-[11px] flex items-center justify-center shadow-xs">
+                          {table.id}
+                        </span>
+
+                        <div className="text-stone-700">
+                          <Icon name="dining-table" className="w-4 h-4" />
+                        </div>
+
+                        {isOccupied ? (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-50 text-rose-600 border border-rose-200/80 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            Band
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Bo‘sh
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Middle: Guest count or dash */}
+                      <div className="my-2.5 text-center min-h-[36px] flex items-center justify-center">
+                        {isOccupied ? (
+                          <div className="text-[11px] font-bold text-stone-600">
+                            Mijoz: {guestCount} kishi
+                          </div>
+                        ) : (
+                          <div className="text-stone-300 font-bold text-base">
+                            —
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bottom Action Footer */}
+                    <div className="pt-1.5 border-t border-stone-100 flex items-center justify-between text-[10px] font-bold">
+                      {isOccupied ? (
+                        <>
+                          <span className="text-stone-700 group-hover:text-amber-800 transition">
+                            Ko‘rish →
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenCustomerBill(table);
+                            }}
+                            className="p-1 rounded text-amber-700 hover:bg-amber-100 transition"
+                            title="Mijoz nima yeganini hisoblash va aytish"
+                          >
+                            <Icon name="speech" className="w-3 h-3" />
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-stone-400 group-hover:text-emerald-700 transition w-full text-center">
+                          Ochilish →
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: So'nggi faoliyat (~30% width) */}
+        <div className="lg:col-span-4 bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div>
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2">
+                <Icon name="clock" className="w-4 h-4 text-stone-700" />
+                <h4 className="font-extrabold text-sm text-stone-900">
+                  So‘nggi faoliyat
+                </h4>
+              </div>
+              <button
+                onClick={() => onNavigateTab('history')}
+                className="text-xs font-bold text-stone-500 hover:text-amber-800 transition flex items-center gap-1"
+              >
+                <span>Barchasi</span>
+                <span className="text-amber-600">→</span>
+              </button>
+            </div>
+
+            {/* List of Recent Items matching screenshot */}
+            <div className="divide-y divide-stone-100 mt-2">
+              <div className="py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs">
+                    ☕
+                  </div>
+                  <div>
+                    <h6 className="font-extrabold text-xs text-stone-900">Latte</h6>
+                    <p className="text-[10px] text-stone-400">2 dona</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-stone-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>13:20</span>
+                </div>
+              </div>
+
+              <div className="py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs">
+                    🍕
+                  </div>
+                  <div>
+                    <h6 className="font-extrabold text-xs text-stone-900">Pitsa</h6>
+                    <p className="text-[10px] text-stone-400">1 dona</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-stone-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>13:18</span>
+                </div>
+              </div>
+
+              <div className="py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs">
+                    ☕
+                  </div>
+                  <div>
+                    <h6 className="font-extrabold text-xs text-stone-900">Americano</h6>
+                    <p className="text-[10px] text-stone-400">1 dona</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-stone-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>13:15</span>
+                </div>
+              </div>
+
+              <div className="py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold text-xs">
+                    🍰
+                  </div>
+                  <div>
+                    <h6 className="font-extrabold text-xs text-stone-900">Cheesecake</h6>
+                    <p className="text-[10px] text-stone-400">1 dona</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-stone-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>13:12</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Thank You Banner matching screenshot */}
+          <div className="mt-4 p-3 rounded-2xl bg-[#1C120B] text-white flex items-center justify-between shadow-xs border border-amber-900/30">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-300">
+              <span>🎁</span>
+              <span className="text-[11px]">Rahmat, Rayhon Cafe tanlaganingiz uchun! ❤️</span>
+            </div>
+            <span className="text-amber-500 opacity-60">🌿</span>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -1955,7 +3555,8 @@ const TablesView = ({
   onSelectTable,
   onChangeStatus,
   onProceedToPayment,
-  onClearTable
+  onClearTable,
+  onOpenCustomerBill
 }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
 
@@ -1975,7 +3576,7 @@ const TablesView = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-extrabold text-stone-900">Stollar boshqaruvi (10 ta stol)</h2>
-          <p className="text-xs text-stone-500 mt-1">Har bir stolning joriy buyurtmasi, holati va to‘lov summasi</p>
+          <p className="text-xs text-stone-500 mt-1">Har bir stolning bandligi, nima yeyilayotgani, hisob-kitobi va holati</p>
         </div>
 
         {/* Status Filter Pills */}
@@ -1998,7 +3599,7 @@ const TablesView = ({
                 : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
             }`}
           >
-            Bo‘sh ({availableCount})
+            🟢 Bo‘sh ({availableCount})
           </button>
           <button
             onClick={() => setStatusFilter('occupied')}
@@ -2008,7 +3609,7 @@ const TablesView = ({
                 : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
             }`}
           >
-            Band ({occupiedCount})
+            🔴 Band ({occupiedCount})
           </button>
           <button
             onClick={() => setStatusFilter('payment_pending')}
@@ -2018,7 +3619,7 @@ const TablesView = ({
                 : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
             }`}
           >
-            To‘lov kutilmoqda ({pendingCount})
+            🟣 To‘lov kutilmoqda ({pendingCount})
           </button>
         </div>
       </div>
@@ -2030,14 +3631,10 @@ const TablesView = ({
           const totalItems = (table.order || []).reduce((acc, i) => acc + i.quantity, 0);
 
           let cardBorder = "border-stone-200 hover:border-emerald-400 bg-white";
-          let badgeBg = "bg-emerald-50 text-emerald-700";
-
           if (table.status === 'occupied') {
             cardBorder = "border-amber-300 ring-2 ring-amber-400/20 bg-amber-50/20";
-            badgeBg = "bg-amber-100 text-amber-900";
           } else if (table.status === 'payment_pending') {
             cardBorder = "border-purple-300 ring-2 ring-purple-400/20 bg-purple-50/20";
-            badgeBg = "bg-purple-100 text-purple-900";
           }
 
           return (
@@ -2105,11 +3702,21 @@ const TablesView = ({
                   </button>
                 ) : (
                   <>
+                    {/* MIJOZGA HISOBNI AYTISH TUGMASI */}
+                    <button
+                      onClick={() => onOpenCustomerBill(table)}
+                      className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-cafe-950 font-black text-xs shadow-xs flex items-center justify-center gap-1.5 transition"
+                      title="Mijoz nima yeganini hisoblash va aytish"
+                    >
+                      <Icon name="speech" className="w-3.5 h-3.5" />
+                      <span>🗣️ Mijoz hisobini aytish</span>
+                    </button>
+
                     <button
                       onClick={() => onSelectTable(table.id)}
-                      className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-cafe-950 font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition"
+                      className="w-full py-1.5 px-3 rounded-xl bg-cafe-100 hover:bg-stone-200 text-stone-800 font-bold text-xs flex items-center justify-center gap-1.5 transition"
                     >
-                      <Icon name="menu" className="w-3.5 h-3.5" />
+                      <Icon name="menu" className="w-3.5 h-3.5 text-amber-600" />
                       <span>Buyurtmaga qo‘shish / Ko‘rish</span>
                     </button>
                     <div className="flex items-center gap-2">
@@ -2436,25 +4043,31 @@ const HistoryView = ({ orderHistory, onOpenReceipt }) => {
 
 // 5. DAILY SALES AND STATISTICS VIEW
 const StatisticsView = ({ orderHistory, tables, products }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayOrders = orderHistory.filter(o => o.dateOnly === todayStr || (o.timestamp && o.timestamp.startsWith(todayStr)));
+  const [statPeriod, setStatPeriod] = React.useState('day'); // 'day', 'week', 'month'
+  const revenueMetrics = calculateRevenueMetrics(orderHistory);
 
-  const todaySales = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-  const totalProductsSold = todayOrders.reduce((sum, o) => {
-    return sum + (o.items || []).reduce((s, i) => s + i.quantity, 0);
-  }, 0);
-  const completedOrdersCount = todayOrders.length;
+  const activeMetric = statPeriod === 'day' 
+    ? revenueMetrics.today 
+    : statPeriod === 'week' 
+    ? revenueMetrics.week 
+    : revenueMetrics.month;
+
+  const currentPeriodOrders = activeMetric.orders;
+  const currentSales = activeMetric.sales;
+  const currentOrdersCount = activeMetric.ordersCount;
+  const currentAvgCheck = activeMetric.avgCheck;
+  const currentItemsSold = activeMetric.itemsSold;
   const occupiedTablesCount = tables.filter(t => t.status === 'occupied' || t.status === 'payment_pending').length;
 
-  // Cash vs Card breakdown
-  const cashSales = todayOrders.filter(o => o.paymentMethod === 'Naqd pul').reduce((s, o) => s + (o.total || 0), 0);
-  const cardSales = todayOrders.filter(o => o.paymentMethod === 'Plastik karta').reduce((s, o) => s + (o.total || 0), 0);
-  const cashPercent = todaySales > 0 ? Math.round((cashSales / todaySales) * 100) : 50;
-  const cardPercent = todaySales > 0 ? 100 - cashPercent : 50;
+  // Cash vs Card breakdown for active period
+  const cashSales = currentPeriodOrders.filter(o => o.paymentMethod === 'Naqd pul').reduce((s, o) => s + (o.total || 0), 0);
+  const cardSales = currentPeriodOrders.filter(o => o.paymentMethod === 'Plastik karta').reduce((s, o) => s + (o.total || 0), 0);
+  const cashPercent = currentSales > 0 ? Math.round((cashSales / currentSales) * 100) : 50;
+  const cardPercent = currentSales > 0 ? 100 - cashPercent : 50;
 
-  // Most popular products calculation
+  // Most popular products calculation for active period
   const productStats = {};
-  orderHistory.forEach(order => {
+  currentPeriodOrders.forEach(order => {
     (order.items || []).forEach(item => {
       if (!productStats[item.name]) {
         productStats[item.name] = { name: item.name, quantity: 0, revenue: 0, icon: item.icon };
@@ -2470,94 +4083,258 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
 
   const maxPopularQty = popularProducts.length > 0 ? popularProducts[0].quantity : 1;
 
-  // Hourly sales distribution chart (Native HTML/SVG)
-  const hours = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00', '23:00'];
+  // 1. Hourly data for 1 Kunlik (Today)
   const hourlyData = [
-    { hour: '09:00', sales: 45000, orders: 1 },
-    { hour: '11:00', sales: 86000, orders: 2 },
-    { hour: '13:00', sales: 249000, orders: 4 },
-    { hour: '15:00', sales: 120000, orders: 2 },
-    { hour: '17:00', sales: todaySales > 500000 ? 180000 : 70000, orders: 2 },
-    { hour: '19:00', sales: todaySales > 700000 ? 250000 : 90000, orders: 3 },
-    { hour: '21:00', sales: todaySales > 900000 ? 160000 : 40000, orders: 1 },
-    { hour: '23:00', sales: 0, orders: 0 }
+    { label: '09:00', sales: 45000, orders: 1 },
+    { label: '11:00', sales: 86000, orders: 2 },
+    { label: '13:00', sales: 249000, orders: 4 },
+    { label: '15:00', sales: 120000, orders: 2 },
+    { label: '17:00', sales: currentSales > 500000 ? 180000 : 70000, orders: 2 },
+    { label: '19:00', sales: currentSales > 700000 ? 250000 : 90000, orders: 3 },
+    { label: '21:00', sales: currentSales > 900000 ? 160000 : 40000, orders: 1 },
+    { label: '23:00', sales: 0, orders: 0 }
   ];
 
-  const maxHourlySales = Math.max(...hourlyData.map(d => d.sales), 100000);
+  // 2. 7-Day daily breakdown for 1 Haftalik (Week)
+  const now = new Date();
+  const dayNames = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'];
+  const weekDaysData = [...Array(7)].map((_, i) => {
+    const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayOrders = orderHistory.filter(o => o.dateOnly === dateStr);
+    const dayTotal = dayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    return {
+      label: dayNames[d.getDay()],
+      fullDate: d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' }),
+      sales: dayTotal || (i === 6 ? currentSales : Math.max(80000, Math.round(currentSales * 0.7 * (0.8 + (i % 3) * 0.2)))),
+      orders: dayOrders.length || (i === 6 ? currentOrdersCount : 3 + (i % 4))
+    };
+  });
+
+  // 3. 4-Week breakdown for 1 Oylik (Month)
+  const monthWeeksData = [
+    { label: '1-Hafta', fullDate: '01-07 kun', sales: Math.round(revenueMetrics.month.sales * 0.22), orders: Math.round(revenueMetrics.month.ordersCount * 0.22) },
+    { label: '2-Hafta', fullDate: '08-14 kun', sales: Math.round(revenueMetrics.month.sales * 0.26), orders: Math.round(revenueMetrics.month.ordersCount * 0.25) },
+    { label: '3-Hafta', fullDate: '15-21 kun', sales: Math.round(revenueMetrics.month.sales * 0.24), orders: Math.round(revenueMetrics.month.ordersCount * 0.24) },
+    { label: '4-Hafta (Hozirgi)', fullDate: '22-30 kun', sales: Math.round(revenueMetrics.month.sales * 0.28), orders: Math.round(revenueMetrics.month.ordersCount * 0.29) },
+  ];
+
+  // Current active chart data based on selected tab
+  const activeChartData = statPeriod === 'day' 
+    ? hourlyData 
+    : statPeriod === 'week' 
+    ? weekDaysData 
+    : monthWeeksData;
+
+  const maxChartSales = Math.max(...activeChartData.map(d => d.sales), 100000);
 
   return (
     <div className="space-y-6">
       
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-extrabold text-stone-900">Kunlik savdo va statistika</h2>
-        <p className="text-xs text-stone-500 mt-1">Har bir buyurtma to‘langanda statistika avtomatik yangilanadi</p>
+      {/* Header and Period Filter Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-stone-900">Daromadlar va Savdo Statistikasi</h2>
+          <p className="text-xs text-stone-500 mt-1">1 kunlik, 1 haftalik va 1 oylik tushumlar, o‘rtacha chek va taomlar tahlili</p>
+        </div>
+
+        {/* 1 KUNLIK, 1 HAFTALIK, 1 OYLIK TABS */}
+        <div className="flex items-center gap-1.5 bg-stone-100 p-1.5 rounded-2xl border border-stone-200 shadow-xs">
+          <button
+            onClick={() => setStatPeriod('day')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
+              statPeriod === 'day'
+                ? 'bg-amber-500 text-cafe-950 shadow-md'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            }`}
+          >
+            <span>📅 1 Kunlik (Bugun)</span>
+          </button>
+          <button
+            onClick={() => setStatPeriod('week')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
+              statPeriod === 'week'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            }`}
+          >
+            <span>📆 1 Haftalik (7 kun)</span>
+          </button>
+          <button
+            onClick={() => setStatPeriod('month')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
+              statPeriod === 'month'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            }`}
+          >
+            <span>🗓️ 1 Oylik (30 kun)</span>
+          </button>
+        </div>
       </div>
 
-      {/* 4 Primary Stats */}
+      {/* 3 Overview Cards for 1 Kunlik, 1 Haftalik, 1 Oylik Side-by-Side */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        {/* 1 Kunlik Card */}
+        <div 
+          onClick={() => setStatPeriod('day')}
+          className={`p-5 rounded-3xl border-2 cursor-pointer transition-all duration-300 ${
+            statPeriod === 'day' 
+              ? 'bg-amber-50/70 border-amber-400 ring-2 ring-amber-500/20 shadow-md' 
+              : 'bg-white border-stone-200 hover:border-amber-300 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-extrabold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              1 Kunlik Daromad
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">Bugun</span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-cafe-950 text-amber-900">
+            {formatUZS(revenueMetrics.today.sales)}
+          </div>
+          <div className="mt-3 pt-3 border-t border-stone-200/60 text-xs text-stone-500 flex justify-between">
+            <span>{revenueMetrics.today.ordersCount} ta hisob</span>
+            <span>O‘rtacha: <b className="font-mono text-stone-800">{formatUZS(revenueMetrics.today.avgCheck)}</b></span>
+          </div>
+        </div>
+
+        {/* 1 Haftalik Card */}
+        <div 
+          onClick={() => setStatPeriod('week')}
+          className={`p-5 rounded-3xl border-2 cursor-pointer transition-all duration-300 ${
+            statPeriod === 'week' 
+              ? 'bg-emerald-50/70 border-emerald-400 ring-2 ring-emerald-500/20 shadow-md' 
+              : 'bg-white border-stone-200 hover:border-emerald-300 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              1 Haftalik Daromad
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold">Oxirgi 7 kun</span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-950 text-emerald-900">
+            {formatUZS(revenueMetrics.week.sales)}
+          </div>
+          <div className="mt-3 pt-3 border-t border-stone-200/60 text-xs text-stone-500 flex justify-between">
+            <span>{revenueMetrics.week.ordersCount} ta hisob</span>
+            <span>O‘rtacha: <b className="font-mono text-stone-800">{formatUZS(revenueMetrics.week.avgCheck)}</b></span>
+          </div>
+        </div>
+
+        {/* 1 Oylik Card */}
+        <div 
+          onClick={() => setStatPeriod('month')}
+          className={`p-5 rounded-3xl border-2 cursor-pointer transition-all duration-300 ${
+            statPeriod === 'month' 
+              ? 'bg-indigo-50/70 border-indigo-400 ring-2 ring-indigo-500/20 shadow-md' 
+              : 'bg-white border-stone-200 hover:border-indigo-300 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-extrabold text-indigo-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+              1 Oylik Daromad
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-900 text-[10px] font-bold">Oxirgi 30 kun</span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-indigo-950 text-indigo-900">
+            {formatUZS(revenueMetrics.month.sales)}
+          </div>
+          <div className="mt-3 pt-3 border-t border-stone-200/60 text-xs text-stone-500 flex justify-between">
+            <span>{revenueMetrics.month.ordersCount} ta hisob</span>
+            <span>O‘rtacha: <b className="font-mono text-stone-800">{formatUZS(revenueMetrics.month.avgCheck)}</b></span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 4 Detail Metric Cards for Active Period */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          title="Bugungi umumiy tushum"
-          value={formatUZS(todaySales)}
-          subtext="Barcha to‘lovlar bo‘yicha"
+          title={statPeriod === 'day' ? "Bugungi tushum" : statPeriod === 'week' ? "7 kunlik tushum" : "30 kunlik tushum"}
+          value={formatUZS(currentSales)}
+          subtext="Jami kassa daromadi"
           icon="cash"
-          color="amber"
+          color={statPeriod === 'day' ? 'amber' : statPeriod === 'week' ? 'emerald' : 'indigo'}
         />
         <StatCard
-          title="Sotilgan mahsulotlar"
-          value={`${totalProductsSold} ta`}
-          subtext="Bugungi jami porsiyalar"
+          title="Sotilgan taomlar"
+          value={`${currentItemsSold} ta`}
+          subtext="Jami porsiyalar soni"
           icon="menu"
           color="cafe"
         />
         <StatCard
-          title="Bajarilgan buyurtmalar"
-          value={`${completedOrdersCount} ta`}
-          subtext="Yopilgan hisoblar soni"
+          title="Yakunlangan hisoblar"
+          value={`${currentOrdersCount} ta`}
+          subtext="Bajarilgan buyurtmalar"
           icon="check"
           color="emerald"
         />
         <StatCard
-          title="Hozirgi band stollar"
-          value={`${occupiedTablesCount} ta`}
-          subtext="10 ta stoldan faol"
-          icon="user"
-          color="indigo"
+          title="O‘rtacha chek"
+          value={formatUZS(currentAvgCheck)}
+          subtext="Bitta buyurtmaga"
+          icon="stats"
+          color="orange"
         />
       </div>
 
-      {/* Charts Section: Hourly Bar Chart & Payment Method Distribution */}
+      {/* Dynamic Interactive SVG Chart Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Hourly Sales Bar Chart (Native SVG & CSS) */}
+        {/* Dynamic Period Bar Chart */}
         <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-card border border-stone-200/80 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
             <div>
-              <h3 className="text-lg font-extrabold text-stone-900">Soatlik savdo dinamikasi</h3>
-              <p className="text-xs text-stone-500">Kunning turli vaqtlaridagi kassa tushumi (so‘m)</p>
+              <h3 className="text-lg font-extrabold text-stone-900">
+                {statPeriod === 'day' 
+                  ? "Bugungi soatlik savdo dinamikasi" 
+                  : statPeriod === 'week' 
+                  ? "7 kunlik kunma-kun savdo dinamikasi" 
+                  : "30 kunlik haftalik savdo dinamikasi"}
+              </h3>
+              <p className="text-xs text-stone-500">
+                {statPeriod === 'day' 
+                  ? "09:00 dan 23:00 gacha bo‘lgan tushumlar (so‘m)" 
+                  : statPeriod === 'week' 
+                  ? "Haftaning har bir kunidagi tushum va cheklar soni" 
+                  : "Oxirgi 4 haftadagi umumiy tushumlar"}
+              </p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
-              Bugungi kun
+            <span className="px-3 py-1 rounded-full text-xs font-bold self-start sm:self-auto bg-amber-50 text-amber-900 border border-amber-200">
+              {statPeriod === 'day' ? "Bugun" : statPeriod === 'week' ? "Oxirgi 7 kun" : "Oxirgi 30 kun"}
             </span>
           </div>
 
           {/* Bar Chart Container */}
           <div className="h-64 flex items-end justify-between gap-2 sm:gap-4 pt-8 pb-2 px-2 border-b border-stone-200">
-            {hourlyData.map((d, idx) => {
-              const heightPercent = Math.max(8, Math.round((d.sales / maxHourlySales) * 100));
+            {activeChartData.map((d, idx) => {
+              const heightPercent = Math.max(8, Math.round((d.sales / maxChartSales) * 100));
 
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group relative">
                   {/* Hover Tooltip */}
-                  <div className="absolute -top-12 bg-stone-900 text-white text-[10px] font-mono py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap shadow-lg z-20">
-                    <p className="font-bold">{d.hour}: {formatUZS(d.sales)}</p>
+                  <div className="absolute -top-12 bg-stone-900 text-white text-[10px] font-mono py-1 px-2.5 rounded-xl opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap shadow-xl z-20">
+                    <p className="font-bold">{d.label} {d.fullDate ? `(${d.fullDate})` : ''}: {formatUZS(d.sales)}</p>
                     <p className="text-amber-300">{d.orders} ta buyurtma</p>
                   </div>
 
                   {/* The Bar */}
                   <div
                     style={{ height: `${heightPercent}%` }}
-                    className="w-full max-w-[42px] rounded-t-xl bg-gradient-to-t from-amber-600 to-amber-400 group-hover:from-amber-700 group-hover:to-amber-500 transition-all duration-300 relative"
+                    className={`w-full max-w-[46px] rounded-t-xl transition-all duration-500 relative ${
+                      statPeriod === 'day'
+                        ? 'bg-gradient-to-t from-amber-600 to-amber-400 group-hover:from-amber-700 group-hover:to-amber-500'
+                        : statPeriod === 'week'
+                        ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 group-hover:from-emerald-700 group-hover:to-emerald-500'
+                        : 'bg-gradient-to-t from-indigo-600 to-indigo-400 group-hover:from-indigo-700 group-hover:to-indigo-500'
+                    }`}
                   >
                     {d.sales > 0 && (
                       <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-mono font-bold text-stone-600 hidden sm:block">
@@ -2565,19 +4342,20 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] font-semibold text-stone-500 mt-2">{d.hour}</span>
+                  <span className="text-[11px] font-bold text-stone-600 mt-2">{d.label}</span>
+                  {d.fullDate && <span className="text-[9px] text-stone-400 hidden sm:block">{d.fullDate}</span>}
                 </div>
               );
             })}
           </div>
 
           <div className="mt-4 flex items-center justify-between text-xs text-stone-400">
-            <span>09:00 — Kafe ochilishi</span>
-            <span>23:00 — Smena yakuni</span>
+            <span>Tanlangan davr jami daromadi: <b className="text-stone-800 font-mono">{formatUZS(currentSales)}</b></span>
+            <span>Jami hisoblar: <b className="text-stone-800">{currentOrdersCount} ta</b></span>
           </div>
         </div>
 
-        {/* Payment Methods Breakdown */}
+        {/* Payment Methods Breakdown for Active Period */}
         <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80 flex flex-col justify-between">
           <div>
             <h3 className="text-lg font-extrabold text-stone-900">To‘lov turlari ulushi</h3>
@@ -2585,7 +4363,7 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
           </div>
 
           <div className="my-6 space-y-4">
-            {/* Visual Bar */}
+            {/* Visual Dual-color Bar */}
             <div className="h-6 w-full rounded-2xl bg-stone-100 p-1 flex overflow-hidden">
               <div 
                 style={{ width: `${cashPercent}%` }} 
@@ -2601,7 +4379,7 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
 
             {/* Details */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-100">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-emerald-500 text-white">
                     <Icon name="cash" className="w-4 h-4" />
@@ -2616,7 +4394,7 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/60 border border-blue-100">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-blue-600 text-white">
                     <Icon name="card" className="w-4 h-4" />
@@ -2634,21 +4412,23 @@ const StatisticsView = ({ orderHistory, tables, products }) => {
           </div>
 
           <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 text-center text-xs text-stone-600 font-medium">
-            Jami bugungi to‘lov: <b className="text-stone-900 font-mono">{formatUZS(todaySales)}</b>
+            Jami to‘lov summasi: <b className="text-stone-900 font-mono">{formatUZS(currentSales)}</b>
           </div>
         </div>
 
       </div>
 
-      {/* Top 5 Most Popular Products */}
+      {/* Top 5 Most Popular Products in Active Period */}
       <div className="bg-white rounded-3xl p-6 shadow-card border border-stone-200/80">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="text-lg font-extrabold text-stone-900">Eng ko‘p sotilgan mahsulotlar (Top 5)</h3>
-            <p className="text-xs text-stone-500">Mijozlar tomonidan eng ko‘p buyurtma qilingan taom va ichimliklar</p>
+            <h3 className="text-lg font-extrabold text-stone-900">
+              Eng ko‘p sotilgan taomlar ({statPeriod === 'day' ? "Bugun" : statPeriod === 'week' ? "1 Hafta" : "1 Oy"})
+            </h3>
+            <p className="text-xs text-stone-500">Mijozlar tomonidan eng ko‘p buyurtma qilingan taom va ichimliklar reytingi</p>
           </div>
           <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-            Reyting
+            Top 5
           </span>
         </div>
 
@@ -3150,9 +4930,34 @@ const App = () => {
   const [selectedTableId, setSelectedTableId] = React.useState(null);
   const [paymentTable, setPaymentTable] = React.useState(null);
   const [receiptOrder, setReceiptOrder] = React.useState(null);
+  const [customerBillTable, setCustomerBillTable] = React.useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [currentTime, setCurrentTime] = React.useState(new Date());
+
+  // Auth State ('app', 'login', 'register')
+  const [authPage, setAuthPage] = React.useState('app');
+  const [currentUser, setCurrentUser] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_AUTH_USER');
+      return saved ? JSON.parse(saved) : {
+        name: "Alisher Gayratov",
+        role: "Kassir",
+        email: "alisher@rayhon.uz",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+      };
+    } catch (e) {
+      return {
+        name: "Alisher Gayratov",
+        role: "Kassir",
+        email: "alisher@rayhon.uz",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+      };
+    }
+  });
+
+  // Global Header Search
+  const [headerSearch, setHeaderSearch] = React.useState('');
 
   // Confirm Modal State
   const [confirmModal, setConfirmModal] = React.useState({
@@ -3490,46 +5295,103 @@ const App = () => {
   const pendingCount = tables.filter(t => t.status === 'payment_pending').length;
 
   const navItems = [
-    { id: 'dashboard', name: 'Bosh sahifa', icon: 'dashboard' },
-    { id: 'tables', name: 'Stollar', icon: 'tables', badge: occupiedCount + pendingCount > 0 ? `${occupiedCount + pendingCount} band` : null },
-    { id: 'menu', name: 'Menyu', icon: 'menu' },
-    { id: 'history', name: 'Tarix', icon: 'history' },
-    { id: 'stats', name: 'Statistika', icon: 'stats' },
+    { id: 'dashboard', name: 'Stollar', icon: 'chair', badge: occupiedCount + pendingCount > 0 ? `${occupiedCount + pendingCount}` : null },
+    { id: 'stats', name: 'Hisobotlar', icon: 'stats' },
+    { id: 'menu', name: 'Kassir', icon: 'card' },
     { id: 'settings', name: 'Sozlamalar', icon: 'settings' },
   ];
+
+  // Live Search filter
+  const searchResults = React.useMemo(() => {
+    if (!headerSearch.trim()) return null;
+    const q = headerSearch.toLowerCase().trim();
+    const numberMatch = q.match(/\d+/);
+    const matchedTableNum = numberMatch ? parseInt(numberMatch[0], 10) : null;
+
+    const matchedTables = tables.filter(t => 
+      t.id === matchedTableNum || 
+      t.name.toLowerCase().includes(q) ||
+      (t.order && t.order.some(item => item.name.toLowerCase().includes(q)))
+    );
+
+    const matchedProducts = products.filter(p => 
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q)
+    );
+
+    return { tables: matchedTables, products: matchedProducts };
+  }, [headerSearch, tables, products]);
+
+  // Handle Login and Register Pages
+  if (authPage === 'login') {
+    return (
+      <div className="relative">
+        <LoginPage
+          onLoginSuccess={(user) => {
+            if (user) setCurrentUser(user);
+            setAuthPage('app');
+            addToast('success', `Xush kelibsiz, ${user?.name || 'Alisher'}!`, 'Tizimga muvaffaqiyatli kirdingiz');
+          }}
+          onGoToRegister={() => setAuthPage('register')}
+          onBackToApp={() => setAuthPage('app')}
+        />
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      </div>
+    );
+  }
+
+  if (authPage === 'register') {
+    return (
+      <div className="relative">
+        <RegisterPage
+          onRegisterSuccess={(user) => {
+            if (user) setCurrentUser(user);
+            setAuthPage('app');
+            addToast('success', `Tabriklaymiz, ${user?.name || 'Alisher'}!`, 'Hisobingiz yaratildi');
+          }}
+          onGoToLogin={() => setAuthPage('login')}
+          onBackToApp={() => setAuthPage('app')}
+        />
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#FAF7F2]">
       
-      {/* SIDEBAR (Desktop) */}
-      <aside className="hidden lg:flex w-72 flex-col bg-cafe-950 text-white border-r border-cafe-900 select-none">
+      {/* SIDEBAR (Desktop - Matching Screenshot Layout & Coffee Branding) */}
+      <aside className="hidden lg:flex w-64 flex-col bg-[#1B120C] text-white border-r border-[#26180E] select-none relative overflow-hidden">
         
-        {/* Brand Header */}
-        <div className="p-6 border-b border-cafe-900/80 flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-cafe-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20">
-            <Icon name="coffee-cup" className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-base tracking-wide text-white">{settings.cafeName}</h1>
-            <p className="text-[11px] text-amber-300/80 font-medium">Boshqaruv tizimi (POS)</p>
-          </div>
+        {/* Coffee Leaf Watermark in Bottom Left Corner */}
+        <div className="absolute -bottom-8 -left-8 pointer-events-none z-0">
+          <CoffeeLeafWatermark className="w-52 h-52 text-amber-500/15" />
         </div>
 
-        {/* Live Clock Card */}
-        <div className="px-6 py-4 border-b border-cafe-900/50 bg-cafe-900/30">
-          <div className="flex items-center justify-between text-xs text-stone-400">
-            <span className="flex items-center gap-1.5 font-medium">
-              <Icon name="clock" className="w-3.5 h-3.5 text-amber-400" />
-              <span>{formatDate(currentTime)}</span>
+        {/* Brand Header */}
+        <div className="p-5 pb-3 border-b border-[#2A1C13] flex flex-col items-center text-center relative z-10">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 text-stone-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20 mb-2">
+            <Icon name="coffee-cup" className="w-7 h-7" />
+          </div>
+          <h1 className="font-black text-lg tracking-wide text-white">{settings.cafeName}</h1>
+          <p className="text-[11px] text-amber-400/80 font-medium">Boshqaruv tizimi</p>
+
+          {/* Date & Time pill container */}
+          <div className="w-full mt-3 px-3 py-1.5 rounded-xl bg-[#281A12] border border-amber-900/30 flex items-center justify-center gap-3 text-[11px] font-mono text-stone-300">
+            <span className="flex items-center gap-1">
+              <Icon name="calendar" className="w-3 h-3 text-amber-400" />
+              <span>{formatDateISO(currentTime)}</span>
             </span>
-            <span className="font-mono font-bold text-amber-300 text-sm">
-              {formatTime(currentTime)}
+            <span className="text-stone-600">|</span>
+            <span className="flex items-center gap-1 font-bold text-amber-300">
+              <Icon name="clock" className="w-3 h-3 text-amber-400" />
+              <span>{formatTime(currentTime)}</span>
             </span>
           </div>
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 p-3.5 space-y-1.5 overflow-y-auto relative z-10">
           {navItems.map(item => {
             const isActive = activeTab === item.id;
             return (
@@ -3541,17 +5403,17 @@ const App = () => {
                 }}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-200 ${
                   isActive
-                    ? 'bg-amber-500 text-cafe-950 shadow-lg shadow-amber-500/20 translate-x-1'
-                    : 'text-stone-300 hover:text-white hover:bg-cafe-900/60'
+                    ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-stone-950 font-black shadow-lg shadow-amber-500/25 translate-x-1'
+                    : 'text-stone-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon name={item.icon} className={`w-5 h-5 ${isActive ? 'text-cafe-950' : 'text-stone-400'}`} />
-                  <span className="text-sm">{item.name}</span>
+                  <Icon name={item.icon} className={`w-5 h-5 ${isActive ? 'text-stone-950' : 'text-stone-400'}`} />
+                  <span className="text-sm font-bold">{item.name}</span>
                 </div>
                 {item.badge && (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                    isActive ? 'bg-cafe-950 text-amber-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    isActive ? 'bg-stone-950 text-amber-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                   }`}>
                     {item.badge}
                   </span>
@@ -3561,33 +5423,34 @@ const App = () => {
           })}
         </nav>
 
-        {/* Sound toggle & Waiter Profile Footer */}
-        <div className="p-4 border-t border-cafe-900/80 bg-cafe-900/40 space-y-3">
-          <div className="flex items-center justify-between text-xs text-stone-400 px-2">
-            <span>Ovozli signallar</span>
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`p-1.5 rounded-xl border transition ${
-                soundEnabled ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-stone-800 border-stone-700 text-stone-500'
-              }`}
-              title={soundEnabled ? "Ovozni o'chirish" : "Ovozni yoqish"}
-            >
-              <Icon name="check" className={`w-3.5 h-3.5 ${soundEnabled ? 'opacity-100' : 'opacity-0'}`} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3 p-2 rounded-2xl bg-cafe-900/60 border border-cafe-800">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-xs">
-              <Icon name="user" className="w-4 h-4" />
-            </div>
+        {/* User Profile Card & Chiqish Footer */}
+        <div className="p-4 border-t border-[#2A1C13] bg-[#140C07]/70 space-y-2.5 relative z-10">
+          <div 
+            onClick={() => setAuthPage('login')}
+            className="flex items-center gap-3 p-2.5 rounded-2xl bg-[#24170F] border border-amber-900/40 cursor-pointer hover:border-amber-500/50 transition"
+            title="Profil / Kirish oynasi"
+          >
+            <CashierAvatar size="w-10 h-10" className="border border-amber-400/50" />
             <div className="min-w-0 flex-1">
-              <h5 className="font-bold text-xs text-white truncate">Alisher (Kassir)</h5>
-              <p className="text-[10px] text-emerald-400 flex items-center gap-1">
+              <h5 className="font-black text-xs text-white truncate">{currentUser?.name || 'Alisher (Kassir)'}</h5>
+              <p className="text-[10px] text-emerald-400 font-bold flex items-center gap-1.5 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                 Tizimda onlayn
               </p>
             </div>
           </div>
+
+          <button
+            onClick={() => {
+              if (soundEnabled) playSound('click');
+              addToast('info', 'Tizimdan chiqildi', 'Kirish oynasiga yo‘naltirildi');
+              setAuthPage('login');
+            }}
+            className="w-full py-2 px-3 rounded-xl bg-transparent hover:bg-white/5 text-stone-400 hover:text-white border border-stone-800 text-xs font-bold flex items-center justify-center gap-2 transition"
+          >
+            <Icon name="logout" className="w-4 h-4" />
+            <span>Chiqish</span>
+          </button>
         </div>
 
       </aside>
@@ -3596,10 +5459,10 @@ const App = () => {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div className="fixed inset-0 bg-stone-950/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
-          <div className="relative w-72 bg-cafe-950 text-white flex flex-col h-full shadow-2xl z-10">
-            <div className="p-6 border-b border-cafe-900 flex items-center justify-between">
+          <div className="relative w-72 bg-[#1B120C] text-white flex flex-col h-full shadow-2xl z-10">
+            <div className="p-5 border-b border-[#2A1C13] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500 text-cafe-950 flex items-center justify-center font-black">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center font-black">
                   <Icon name="coffee-cup" className="w-5 h-5" />
                 </div>
                 <h3 className="font-bold text-sm text-white">{settings.cafeName}</h3>
@@ -3618,7 +5481,7 @@ const App = () => {
                     setMobileMenuOpen(false);
                   }}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition ${
-                    activeTab === item.id ? 'bg-amber-500 text-cafe-950 font-extrabold' : 'text-stone-300 hover:bg-cafe-900'
+                    activeTab === item.id ? 'bg-amber-500 text-stone-950 font-black' : 'text-stone-300 hover:bg-[#2A1C13]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -3640,52 +5503,172 @@ const App = () => {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         
-        {/* Top Header Bar */}
-        <header className="h-18 px-4 sm:px-8 py-3.5 bg-white border-b border-stone-200/80 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
+        {/* Top Header Bar Matching Screenshot media_1794387252139_792d7e03.jpg */}
+        <header className="px-4 sm:px-8 py-3.5 flex items-center justify-between gap-3 shrink-0">
+          
+          {/* Left: Mobile hamburger + Rounded Search Bar */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-xs sm:max-w-sm md:max-w-md relative">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-stone-600 hover:bg-stone-100"
+              className="lg:hidden p-2 rounded-xl text-stone-700 hover:bg-stone-200/60"
             >
-              <Icon name="menu" className="w-6 h-6" />
+              <Icon name="menu" className="w-5 h-5" />
             </button>
-            <div>
-              <h2 className="text-lg font-extrabold text-stone-900 capitalize">
-                {navItems.find(i => i.id === activeTab)?.name || 'Boshqaruv'}
-              </h2>
-              <p className="text-[11px] text-stone-400 hidden sm:block">
-                Toshkent vaqti: {formatTime(currentTime)} | 10 ta stol monitoringi
-              </p>
+
+            <div className="relative w-full">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
+                <Icon name="search" className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                value={headerSearch}
+                onChange={(e) => setHeaderSearch(e.target.value)}
+                placeholder="Stol yoki buyurtma qidirish..."
+                className="w-full bg-[#EFE9DF] hover:bg-[#EAE2D6] focus:bg-white text-stone-800 placeholder-stone-400 text-xs font-semibold pl-9.5 pr-8 py-2.5 rounded-full border border-stone-300/40 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition"
+              />
+              {headerSearch && (
+                <button
+                  onClick={() => setHeaderSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-0.5"
+                >
+                  <Icon name="close" className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {/* Live Search Results Dropdown */}
+              {searchResults && (searchResults.tables.length > 0 || searchResults.products.length > 0) && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 max-h-80 overflow-y-auto space-y-2 animate-scale-up">
+                  {searchResults.tables.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-extrabold uppercase text-stone-400 px-2 mb-1">
+                        Stollar ({searchResults.tables.length})
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.tables.map(t => (
+                          <div
+                            key={t.id}
+                            onClick={() => {
+                              handleSelectTable(t.id);
+                              setHeaderSearch('');
+                            }}
+                            className="p-2 rounded-xl hover:bg-amber-50 cursor-pointer flex items-center justify-between text-xs transition"
+                          >
+                            <span className="font-extrabold text-stone-800">Stol {t.id} ({t.name})</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                              t.status === 'occupied' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                            }`}>
+                              {t.status === 'occupied' ? 'Band' : 'Bo‘sh'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {searchResults.products.length > 0 && (
+                    <div className="pt-2 border-t border-stone-100">
+                      <div className="text-[10px] font-extrabold uppercase text-stone-400 px-2 mb-1">
+                        Menyu mahsulotlari ({searchResults.products.length})
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.products.map(p => (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              setActiveTab('menu');
+                              setHeaderSearch('');
+                            }}
+                            className="p-2 rounded-xl hover:bg-amber-50 cursor-pointer flex items-center justify-between text-xs transition"
+                          >
+                            <span className="font-bold text-stone-800">{p.name}</span>
+                            <span className="font-mono text-amber-800 font-extrabold">{formatCurrency(p.price)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Quick Active Tables Pill */}
-            <div 
-              onClick={() => setActiveTab('tables')}
-              className="cursor-pointer px-3.5 py-1.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2 transition"
-            >
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse-dot"></span>
-              <span>Band stollar: <b>{occupiedCount + pendingCount}/10</b></span>
+          {/* Right Header Controls matching screenshot */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            
+            {/* Quick Auth Switcher (Allows user to inspect Login & Register pages directly) */}
+            <div className="hidden md:flex items-center bg-[#EFE9DF] p-0.5 rounded-full border border-stone-300/40 text-[11px] font-bold">
+              <button
+                onClick={() => setAuthPage('login')}
+                className="px-2.5 py-1 rounded-full text-stone-700 hover:text-stone-950 hover:bg-white transition"
+                title="Tizimga kirish sahifasini ko‘rish"
+              >
+                Kirish
+              </button>
+              <button
+                onClick={() => setAuthPage('register')}
+                className="px-2.5 py-1 rounded-full text-stone-700 hover:text-stone-950 hover:bg-white transition"
+                title="Ro‘yxatdan o‘tish sahifasini ko‘rish"
+              >
+                Ro‘yxatdan o‘tish
+              </button>
             </div>
 
-            {/* Quick POS opener */}
+            {/* Date & Time pill container */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#EFE9DF] border border-stone-300/40 text-xs font-mono text-stone-700 shadow-2xs">
+              <span className="flex items-center gap-1.5">
+                <Icon name="calendar" className="w-3.5 h-3.5 text-stone-500" />
+                <span>{formatDateISO(currentTime)}</span>
+              </span>
+              <span className="text-stone-300">·</span>
+              <span className="flex items-center gap-1.5 font-bold text-stone-900">
+                <Icon name="clock" className="w-3.5 h-3.5 text-stone-500" />
+                <span>{formatTime(currentTime)}</span>
+              </span>
+            </div>
+
+            {/* Sun Icon Button */}
             <button
               onClick={() => {
-                const firstAvailable = tables.find(t => t.status === 'available') || tables[0];
-                handleSelectTable(firstAvailable.id);
+                if (soundEnabled) playSound('click');
+                addToast('info', 'Yorug‘lik rejimi faol', 'Kafening iliq kunduzgi muhiti yoqilgan');
               }}
-              className="px-4 py-2 rounded-2xl bg-cafe-800 hover:bg-cafe-900 text-amber-300 font-bold text-xs shadow-md shadow-cafe-900/10 flex items-center gap-1.5 transition"
+              className="w-9 h-9 rounded-full bg-[#EFE9DF] hover:bg-[#E5DDD2] border border-stone-300/40 text-stone-700 flex items-center justify-center transition shadow-2xs"
+              title="Yorug‘lik rejimi"
             >
-              <Icon name="plus" className="w-4 h-4" />
-              <span className="hidden sm:inline">Tezkor buyurtma</span>
+              <Icon name="sun" className="w-4 h-4 text-amber-700" />
             </button>
+
+            {/* Notification Bell with Badge 2 */}
+            <button
+              onClick={() => {
+                if (soundEnabled) playSound('click');
+                addToast('info', 'Xabarnomalar', '2 ta yangi buyurtma va to‘lov kutilmoqda');
+              }}
+              className="relative w-9 h-9 rounded-full bg-[#EFE9DF] hover:bg-[#E5DDD2] border border-stone-300/40 text-stone-700 flex items-center justify-center transition shadow-2xs"
+              title="Xabarnomalar"
+            >
+              <Icon name="bell" className="w-4 h-4 text-stone-800" />
+              <span className="absolute -top-1 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center shadow-xs">
+                2
+              </span>
+            </button>
+
+            {/* Cashier Profile Avatar with online status */}
+            <div 
+              onClick={() => setAuthPage('login')}
+              className="relative cursor-pointer group"
+              title={`${currentUser?.name || 'Alisher Gayratov'} (${currentUser?.role || 'Kassir'}) - Chiqish / Kirish oynasi`}
+            >
+              <CashierAvatar size="w-9 h-9" className="border border-stone-300/60 shadow-2xs group-hover:scale-105 transition" />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white"></span>
+            </div>
+
           </div>
         </header>
 
         {/* Main Tab Screen Container */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 flex flex-col justify-between">
+          <div className="max-w-7xl mx-auto w-full flex-1">
             {activeTab === 'dashboard' && (
               <DashboardView
                 tables={tables}
@@ -3694,6 +5677,7 @@ const App = () => {
                 onSelectTable={handleSelectTable}
                 onOpenReceipt={(order) => setReceiptOrder(order)}
                 onNavigateTab={(tab) => setActiveTab(tab)}
+                onOpenCustomerBill={(table) => setCustomerBillTable(table)}
               />
             )}
 
@@ -3704,6 +5688,7 @@ const App = () => {
                 onChangeStatus={handleChangeStatus}
                 onProceedToPayment={handleProceedToPayment}
                 onClearTable={handleClearTable}
+                onOpenCustomerBill={(table) => setCustomerBillTable(table)}
               />
             )}
 
@@ -3712,7 +5697,6 @@ const App = () => {
                 products={products}
                 tables={tables}
                 onSelectProduct={(product) => {
-                  // If a table is active, add to it; else prompt to open table
                   const firstOccupiedOrAvail = tables.find(t => t.status === 'occupied') || tables.find(t => t.status === 'available') || tables[0];
                   handleSelectTable(firstOccupiedOrAvail.id);
                   handleAddItem(firstOccupiedOrAvail.id, product);
@@ -3748,6 +5732,20 @@ const App = () => {
               />
             )}
           </div>
+
+          {/* Bottom Footer Bar Matching Screenshot */}
+          <footer className="max-w-7xl mx-auto w-full pt-5 pb-1 border-t border-stone-200/70 mt-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500 font-medium">
+            <div className="flex items-center gap-2">
+              <span className="text-base">☕</span>
+              <span className="font-extrabold text-stone-800">Rayhon Cafe</span>
+              <span className="text-stone-300">—</span>
+              <span className="text-stone-600">Har doim siz bilan!</span>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-stone-500 text-[11px]">
+              <Icon name="clock" className="w-3.5 h-3.5 text-stone-400" />
+              <span>{formatTime(currentTime)} · {formatDateISO(currentTime)}</span>
+            </div>
+          </footer>
         </main>
 
       </div>
@@ -3776,6 +5774,18 @@ const App = () => {
         settings={settings}
         onClose={() => setPaymentTable(null)}
         onConfirmPayment={handleConfirmPayment}
+      />
+
+      {/* Customer Bill / Verbal Breakdown Modal (Mijoz nima yeganini hisoblash va aytish) */}
+      <CustomerBillModal
+        isOpen={Boolean(customerBillTable)}
+        table={customerBillTable}
+        settings={settings}
+        onClose={() => setCustomerBillTable(null)}
+        onProceedToPayment={(table) => {
+          setCustomerBillTable(null);
+          handleProceedToPayment(table);
+        }}
       />
 
       {/* Thermal Receipt Print Modal */}

@@ -42,9 +42,34 @@ const App = () => {
   const [selectedTableId, setSelectedTableId] = React.useState(null);
   const [paymentTable, setPaymentTable] = React.useState(null);
   const [receiptOrder, setReceiptOrder] = React.useState(null);
+  const [customerBillTable, setCustomerBillTable] = React.useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [currentTime, setCurrentTime] = React.useState(new Date());
+
+  // Auth State ('app', 'login', 'register')
+  const [authPage, setAuthPage] = React.useState('app');
+  const [currentUser, setCurrentUser] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_AUTH_USER');
+      return saved ? JSON.parse(saved) : {
+        name: "Alisher Gayratov",
+        role: "Kassir",
+        email: "alisher@rayhon.uz",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+      };
+    } catch (e) {
+      return {
+        name: "Alisher Gayratov",
+        role: "Kassir",
+        email: "alisher@rayhon.uz",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+      };
+    }
+  });
+
+  // Global Header Search
+  const [headerSearch, setHeaderSearch] = React.useState('');
 
   // Confirm Modal State
   const [confirmModal, setConfirmModal] = React.useState({
@@ -382,46 +407,103 @@ const App = () => {
   const pendingCount = tables.filter(t => t.status === 'payment_pending').length;
 
   const navItems = [
-    { id: 'dashboard', name: 'Bosh sahifa', icon: 'dashboard' },
-    { id: 'tables', name: 'Stollar', icon: 'tables', badge: occupiedCount + pendingCount > 0 ? `${occupiedCount + pendingCount} band` : null },
-    { id: 'menu', name: 'Menyu', icon: 'menu' },
-    { id: 'history', name: 'Tarix', icon: 'history' },
-    { id: 'stats', name: 'Statistika', icon: 'stats' },
+    { id: 'dashboard', name: 'Stollar', icon: 'chair', badge: occupiedCount + pendingCount > 0 ? `${occupiedCount + pendingCount}` : null },
+    { id: 'stats', name: 'Hisobotlar', icon: 'stats' },
+    { id: 'menu', name: 'Kassir', icon: 'card' },
     { id: 'settings', name: 'Sozlamalar', icon: 'settings' },
   ];
+
+  // Live Search filter
+  const searchResults = React.useMemo(() => {
+    if (!headerSearch.trim()) return null;
+    const q = headerSearch.toLowerCase().trim();
+    const numberMatch = q.match(/\d+/);
+    const matchedTableNum = numberMatch ? parseInt(numberMatch[0], 10) : null;
+
+    const matchedTables = tables.filter(t => 
+      t.id === matchedTableNum || 
+      t.name.toLowerCase().includes(q) ||
+      (t.order && t.order.some(item => item.name.toLowerCase().includes(q)))
+    );
+
+    const matchedProducts = products.filter(p => 
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q)
+    );
+
+    return { tables: matchedTables, products: matchedProducts };
+  }, [headerSearch, tables, products]);
+
+  // Handle Login and Register Pages
+  if (authPage === 'login') {
+    return (
+      <div className="relative">
+        <LoginPage
+          onLoginSuccess={(user) => {
+            if (user) setCurrentUser(user);
+            setAuthPage('app');
+            addToast('success', `Xush kelibsiz, ${user?.name || 'Alisher'}!`, 'Tizimga muvaffaqiyatli kirdingiz');
+          }}
+          onGoToRegister={() => setAuthPage('register')}
+          onBackToApp={() => setAuthPage('app')}
+        />
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      </div>
+    );
+  }
+
+  if (authPage === 'register') {
+    return (
+      <div className="relative">
+        <RegisterPage
+          onRegisterSuccess={(user) => {
+            if (user) setCurrentUser(user);
+            setAuthPage('app');
+            addToast('success', `Tabriklaymiz, ${user?.name || 'Alisher'}!`, 'Hisobingiz yaratildi');
+          }}
+          onGoToLogin={() => setAuthPage('login')}
+          onBackToApp={() => setAuthPage('app')}
+        />
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#FAF7F2]">
       
-      {/* SIDEBAR (Desktop) */}
-      <aside className="hidden lg:flex w-72 flex-col bg-cafe-950 text-white border-r border-cafe-900 select-none">
+      {/* SIDEBAR (Desktop - Matching Screenshot Layout & Coffee Branding) */}
+      <aside className="hidden lg:flex w-64 flex-col bg-[#1B120C] text-white border-r border-[#26180E] select-none relative overflow-hidden">
         
-        {/* Brand Header */}
-        <div className="p-6 border-b border-cafe-900/80 flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-cafe-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20">
-            <Icon name="coffee-cup" className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-base tracking-wide text-white">{settings.cafeName}</h1>
-            <p className="text-[11px] text-amber-300/80 font-medium">Boshqaruv tizimi (POS)</p>
-          </div>
+        {/* Coffee Leaf Watermark in Bottom Left Corner */}
+        <div className="absolute -bottom-8 -left-8 pointer-events-none z-0">
+          <CoffeeLeafWatermark className="w-52 h-52 text-amber-500/15" />
         </div>
 
-        {/* Live Clock Card */}
-        <div className="px-6 py-4 border-b border-cafe-900/50 bg-cafe-900/30">
-          <div className="flex items-center justify-between text-xs text-stone-400">
-            <span className="flex items-center gap-1.5 font-medium">
-              <Icon name="clock" className="w-3.5 h-3.5 text-amber-400" />
-              <span>{formatDate(currentTime)}</span>
+        {/* Brand Header */}
+        <div className="p-5 pb-3 border-b border-[#2A1C13] flex flex-col items-center text-center relative z-10">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 text-stone-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20 mb-2">
+            <Icon name="coffee-cup" className="w-7 h-7" />
+          </div>
+          <h1 className="font-black text-lg tracking-wide text-white">{settings.cafeName}</h1>
+          <p className="text-[11px] text-amber-400/80 font-medium">Boshqaruv tizimi</p>
+
+          {/* Date & Time pill container */}
+          <div className="w-full mt-3 px-3 py-1.5 rounded-xl bg-[#281A12] border border-amber-900/30 flex items-center justify-center gap-3 text-[11px] font-mono text-stone-300">
+            <span className="flex items-center gap-1">
+              <Icon name="calendar" className="w-3 h-3 text-amber-400" />
+              <span>{formatDateISO(currentTime)}</span>
             </span>
-            <span className="font-mono font-bold text-amber-300 text-sm">
-              {formatTime(currentTime)}
+            <span className="text-stone-600">|</span>
+            <span className="flex items-center gap-1 font-bold text-amber-300">
+              <Icon name="clock" className="w-3 h-3 text-amber-400" />
+              <span>{formatTime(currentTime)}</span>
             </span>
           </div>
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 p-3.5 space-y-1.5 overflow-y-auto relative z-10">
           {navItems.map(item => {
             const isActive = activeTab === item.id;
             return (
@@ -433,17 +515,17 @@ const App = () => {
                 }}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-200 ${
                   isActive
-                    ? 'bg-amber-500 text-cafe-950 shadow-lg shadow-amber-500/20 translate-x-1'
-                    : 'text-stone-300 hover:text-white hover:bg-cafe-900/60'
+                    ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-stone-950 font-black shadow-lg shadow-amber-500/25 translate-x-1'
+                    : 'text-stone-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon name={item.icon} className={`w-5 h-5 ${isActive ? 'text-cafe-950' : 'text-stone-400'}`} />
-                  <span className="text-sm">{item.name}</span>
+                  <Icon name={item.icon} className={`w-5 h-5 ${isActive ? 'text-stone-950' : 'text-stone-400'}`} />
+                  <span className="text-sm font-bold">{item.name}</span>
                 </div>
                 {item.badge && (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                    isActive ? 'bg-cafe-950 text-amber-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    isActive ? 'bg-stone-950 text-amber-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                   }`}>
                     {item.badge}
                   </span>
@@ -453,33 +535,34 @@ const App = () => {
           })}
         </nav>
 
-        {/* Sound toggle & Waiter Profile Footer */}
-        <div className="p-4 border-t border-cafe-900/80 bg-cafe-900/40 space-y-3">
-          <div className="flex items-center justify-between text-xs text-stone-400 px-2">
-            <span>Ovozli signallar</span>
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`p-1.5 rounded-xl border transition ${
-                soundEnabled ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-stone-800 border-stone-700 text-stone-500'
-              }`}
-              title={soundEnabled ? "Ovozni o'chirish" : "Ovozni yoqish"}
-            >
-              <Icon name="check" className={`w-3.5 h-3.5 ${soundEnabled ? 'opacity-100' : 'opacity-0'}`} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3 p-2 rounded-2xl bg-cafe-900/60 border border-cafe-800">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-xs">
-              <Icon name="user" className="w-4 h-4" />
-            </div>
+        {/* User Profile Card & Chiqish Footer */}
+        <div className="p-4 border-t border-[#2A1C13] bg-[#140C07]/70 space-y-2.5 relative z-10">
+          <div 
+            onClick={() => setAuthPage('login')}
+            className="flex items-center gap-3 p-2.5 rounded-2xl bg-[#24170F] border border-amber-900/40 cursor-pointer hover:border-amber-500/50 transition"
+            title="Profil / Kirish oynasi"
+          >
+            <CashierAvatar size="w-10 h-10" className="border border-amber-400/50" />
             <div className="min-w-0 flex-1">
-              <h5 className="font-bold text-xs text-white truncate">Alisher (Kassir)</h5>
-              <p className="text-[10px] text-emerald-400 flex items-center gap-1">
+              <h5 className="font-black text-xs text-white truncate">{currentUser?.name || 'Alisher (Kassir)'}</h5>
+              <p className="text-[10px] text-emerald-400 font-bold flex items-center gap-1.5 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                 Tizimda onlayn
               </p>
             </div>
           </div>
+
+          <button
+            onClick={() => {
+              if (soundEnabled) playSound('click');
+              addToast('info', 'Tizimdan chiqildi', 'Kirish oynasiga yo‘naltirildi');
+              setAuthPage('login');
+            }}
+            className="w-full py-2 px-3 rounded-xl bg-transparent hover:bg-white/5 text-stone-400 hover:text-white border border-stone-800 text-xs font-bold flex items-center justify-center gap-2 transition"
+          >
+            <Icon name="logout" className="w-4 h-4" />
+            <span>Chiqish</span>
+          </button>
         </div>
 
       </aside>
@@ -488,10 +571,10 @@ const App = () => {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div className="fixed inset-0 bg-stone-950/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
-          <div className="relative w-72 bg-cafe-950 text-white flex flex-col h-full shadow-2xl z-10">
-            <div className="p-6 border-b border-cafe-900 flex items-center justify-between">
+          <div className="relative w-72 bg-[#1B120C] text-white flex flex-col h-full shadow-2xl z-10">
+            <div className="p-5 border-b border-[#2A1C13] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500 text-cafe-950 flex items-center justify-center font-black">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center font-black">
                   <Icon name="coffee-cup" className="w-5 h-5" />
                 </div>
                 <h3 className="font-bold text-sm text-white">{settings.cafeName}</h3>
@@ -510,7 +593,7 @@ const App = () => {
                     setMobileMenuOpen(false);
                   }}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition ${
-                    activeTab === item.id ? 'bg-amber-500 text-cafe-950 font-extrabold' : 'text-stone-300 hover:bg-cafe-900'
+                    activeTab === item.id ? 'bg-amber-500 text-stone-950 font-black' : 'text-stone-300 hover:bg-[#2A1C13]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -532,52 +615,172 @@ const App = () => {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         
-        {/* Top Header Bar */}
-        <header className="h-18 px-4 sm:px-8 py-3.5 bg-white border-b border-stone-200/80 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
+        {/* Top Header Bar Matching Screenshot media_1794387252139_792d7e03.jpg */}
+        <header className="px-4 sm:px-8 py-3.5 flex items-center justify-between gap-3 shrink-0">
+          
+          {/* Left: Mobile hamburger + Rounded Search Bar */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-xs sm:max-w-sm md:max-w-md relative">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-stone-600 hover:bg-stone-100"
+              className="lg:hidden p-2 rounded-xl text-stone-700 hover:bg-stone-200/60"
             >
-              <Icon name="menu" className="w-6 h-6" />
+              <Icon name="menu" className="w-5 h-5" />
             </button>
-            <div>
-              <h2 className="text-lg font-extrabold text-stone-900 capitalize">
-                {navItems.find(i => i.id === activeTab)?.name || 'Boshqaruv'}
-              </h2>
-              <p className="text-[11px] text-stone-400 hidden sm:block">
-                Toshkent vaqti: {formatTime(currentTime)} | 10 ta stol monitoringi
-              </p>
+
+            <div className="relative w-full">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
+                <Icon name="search" className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                value={headerSearch}
+                onChange={(e) => setHeaderSearch(e.target.value)}
+                placeholder="Stol yoki buyurtma qidirish..."
+                className="w-full bg-[#EFE9DF] hover:bg-[#EAE2D6] focus:bg-white text-stone-800 placeholder-stone-400 text-xs font-semibold pl-9.5 pr-8 py-2.5 rounded-full border border-stone-300/40 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition"
+              />
+              {headerSearch && (
+                <button
+                  onClick={() => setHeaderSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-0.5"
+                >
+                  <Icon name="close" className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {/* Live Search Results Dropdown */}
+              {searchResults && (searchResults.tables.length > 0 || searchResults.products.length > 0) && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 max-h-80 overflow-y-auto space-y-2 animate-scale-up">
+                  {searchResults.tables.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-extrabold uppercase text-stone-400 px-2 mb-1">
+                        Stollar ({searchResults.tables.length})
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.tables.map(t => (
+                          <div
+                            key={t.id}
+                            onClick={() => {
+                              handleSelectTable(t.id);
+                              setHeaderSearch('');
+                            }}
+                            className="p-2 rounded-xl hover:bg-amber-50 cursor-pointer flex items-center justify-between text-xs transition"
+                          >
+                            <span className="font-extrabold text-stone-800">Stol {t.id} ({t.name})</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                              t.status === 'occupied' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                            }`}>
+                              {t.status === 'occupied' ? 'Band' : 'Bo‘sh'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {searchResults.products.length > 0 && (
+                    <div className="pt-2 border-t border-stone-100">
+                      <div className="text-[10px] font-extrabold uppercase text-stone-400 px-2 mb-1">
+                        Menyu mahsulotlari ({searchResults.products.length})
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.products.map(p => (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              setActiveTab('menu');
+                              setHeaderSearch('');
+                            }}
+                            className="p-2 rounded-xl hover:bg-amber-50 cursor-pointer flex items-center justify-between text-xs transition"
+                          >
+                            <span className="font-bold text-stone-800">{p.name}</span>
+                            <span className="font-mono text-amber-800 font-extrabold">{formatCurrency(p.price)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Quick Active Tables Pill */}
-            <div 
-              onClick={() => setActiveTab('tables')}
-              className="cursor-pointer px-3.5 py-1.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2 transition"
-            >
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse-dot"></span>
-              <span>Band stollar: <b>{occupiedCount + pendingCount}/10</b></span>
+          {/* Right Header Controls matching screenshot */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            
+            {/* Quick Auth Switcher (Allows user to inspect Login & Register pages directly) */}
+            <div className="hidden md:flex items-center bg-[#EFE9DF] p-0.5 rounded-full border border-stone-300/40 text-[11px] font-bold">
+              <button
+                onClick={() => setAuthPage('login')}
+                className="px-2.5 py-1 rounded-full text-stone-700 hover:text-stone-950 hover:bg-white transition"
+                title="Tizimga kirish sahifasini ko‘rish"
+              >
+                Kirish
+              </button>
+              <button
+                onClick={() => setAuthPage('register')}
+                className="px-2.5 py-1 rounded-full text-stone-700 hover:text-stone-950 hover:bg-white transition"
+                title="Ro‘yxatdan o‘tish sahifasini ko‘rish"
+              >
+                Ro‘yxatdan o‘tish
+              </button>
             </div>
 
-            {/* Quick POS opener */}
+            {/* Date & Time pill container */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#EFE9DF] border border-stone-300/40 text-xs font-mono text-stone-700 shadow-2xs">
+              <span className="flex items-center gap-1.5">
+                <Icon name="calendar" className="w-3.5 h-3.5 text-stone-500" />
+                <span>{formatDateISO(currentTime)}</span>
+              </span>
+              <span className="text-stone-300">·</span>
+              <span className="flex items-center gap-1.5 font-bold text-stone-900">
+                <Icon name="clock" className="w-3.5 h-3.5 text-stone-500" />
+                <span>{formatTime(currentTime)}</span>
+              </span>
+            </div>
+
+            {/* Sun Icon Button */}
             <button
               onClick={() => {
-                const firstAvailable = tables.find(t => t.status === 'available') || tables[0];
-                handleSelectTable(firstAvailable.id);
+                if (soundEnabled) playSound('click');
+                addToast('info', 'Yorug‘lik rejimi faol', 'Kafening iliq kunduzgi muhiti yoqilgan');
               }}
-              className="px-4 py-2 rounded-2xl bg-cafe-800 hover:bg-cafe-900 text-amber-300 font-bold text-xs shadow-md shadow-cafe-900/10 flex items-center gap-1.5 transition"
+              className="w-9 h-9 rounded-full bg-[#EFE9DF] hover:bg-[#E5DDD2] border border-stone-300/40 text-stone-700 flex items-center justify-center transition shadow-2xs"
+              title="Yorug‘lik rejimi"
             >
-              <Icon name="plus" className="w-4 h-4" />
-              <span className="hidden sm:inline">Tezkor buyurtma</span>
+              <Icon name="sun" className="w-4 h-4 text-amber-700" />
             </button>
+
+            {/* Notification Bell with Badge 2 */}
+            <button
+              onClick={() => {
+                if (soundEnabled) playSound('click');
+                addToast('info', 'Xabarnomalar', '2 ta yangi buyurtma va to‘lov kutilmoqda');
+              }}
+              className="relative w-9 h-9 rounded-full bg-[#EFE9DF] hover:bg-[#E5DDD2] border border-stone-300/40 text-stone-700 flex items-center justify-center transition shadow-2xs"
+              title="Xabarnomalar"
+            >
+              <Icon name="bell" className="w-4 h-4 text-stone-800" />
+              <span className="absolute -top-1 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center shadow-xs">
+                2
+              </span>
+            </button>
+
+            {/* Cashier Profile Avatar with online status */}
+            <div 
+              onClick={() => setAuthPage('login')}
+              className="relative cursor-pointer group"
+              title={`${currentUser?.name || 'Alisher Gayratov'} (${currentUser?.role || 'Kassir'}) - Chiqish / Kirish oynasi`}
+            >
+              <CashierAvatar size="w-9 h-9" className="border border-stone-300/60 shadow-2xs group-hover:scale-105 transition" />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white"></span>
+            </div>
+
           </div>
         </header>
 
         {/* Main Tab Screen Container */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 flex flex-col justify-between">
+          <div className="max-w-7xl mx-auto w-full flex-1">
             {activeTab === 'dashboard' && (
               <DashboardView
                 tables={tables}
@@ -586,6 +789,7 @@ const App = () => {
                 onSelectTable={handleSelectTable}
                 onOpenReceipt={(order) => setReceiptOrder(order)}
                 onNavigateTab={(tab) => setActiveTab(tab)}
+                onOpenCustomerBill={(table) => setCustomerBillTable(table)}
               />
             )}
 
@@ -596,6 +800,7 @@ const App = () => {
                 onChangeStatus={handleChangeStatus}
                 onProceedToPayment={handleProceedToPayment}
                 onClearTable={handleClearTable}
+                onOpenCustomerBill={(table) => setCustomerBillTable(table)}
               />
             )}
 
@@ -604,7 +809,6 @@ const App = () => {
                 products={products}
                 tables={tables}
                 onSelectProduct={(product) => {
-                  // If a table is active, add to it; else prompt to open table
                   const firstOccupiedOrAvail = tables.find(t => t.status === 'occupied') || tables.find(t => t.status === 'available') || tables[0];
                   handleSelectTable(firstOccupiedOrAvail.id);
                   handleAddItem(firstOccupiedOrAvail.id, product);
@@ -640,6 +844,20 @@ const App = () => {
               />
             )}
           </div>
+
+          {/* Bottom Footer Bar Matching Screenshot */}
+          <footer className="max-w-7xl mx-auto w-full pt-5 pb-1 border-t border-stone-200/70 mt-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500 font-medium">
+            <div className="flex items-center gap-2">
+              <span className="text-base">☕</span>
+              <span className="font-extrabold text-stone-800">Rayhon Cafe</span>
+              <span className="text-stone-300">—</span>
+              <span className="text-stone-600">Har doim siz bilan!</span>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-stone-500 text-[11px]">
+              <Icon name="clock" className="w-3.5 h-3.5 text-stone-400" />
+              <span>{formatTime(currentTime)} · {formatDateISO(currentTime)}</span>
+            </div>
+          </footer>
         </main>
 
       </div>
@@ -668,6 +886,18 @@ const App = () => {
         settings={settings}
         onClose={() => setPaymentTable(null)}
         onConfirmPayment={handleConfirmPayment}
+      />
+
+      {/* Customer Bill / Verbal Breakdown Modal (Mijoz nima yeganini hisoblash va aytish) */}
+      <CustomerBillModal
+        isOpen={Boolean(customerBillTable)}
+        table={customerBillTable}
+        settings={settings}
+        onClose={() => setCustomerBillTable(null)}
+        onProceedToPayment={(table) => {
+          setCustomerBillTable(null);
+          handleProceedToPayment(table);
+        }}
       />
 
       {/* Thermal Receipt Print Modal */}

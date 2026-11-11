@@ -83,6 +83,14 @@ const formatDate = (dateObj) => {
   return d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
+const formatDateISO = (dateObj) => {
+  const d = dateObj ? new Date(dateObj) : new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const formatDateTime = (dateObj) => {
   const d = dateObj ? new Date(dateObj) : new Date();
   return `${formatDate(d)}, ${formatTime(d)}`;
@@ -115,6 +123,71 @@ const exportToCSV = (data, filename = 'rayhon_kafe_savdo_tarixi.csv') => {
   document.body.removeChild(link);
 };
 
+// Revenue Analysis Helper: 1 Kunlik, 1 Haftalik va 1 Oylik Daromatlar
+const calculateRevenueMetrics = (orderHistory) => {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  
+  // Timestamps thresholds
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+  const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+
+  // 1 Kunlik (Bugun)
+  const todayOrders = orderHistory.filter(o => {
+    const oTime = new Date(o.timestamp || o.dateOnly).getTime();
+    return o.dateOnly === todayStr || oTime >= startOfToday;
+  });
+  const todaySales = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const todayOrdersCount = todayOrders.length;
+  const todayAvgCheck = todayOrdersCount > 0 ? Math.round(todaySales / todayOrdersCount) : 0;
+  const todayItemsSold = todayOrders.reduce((acc, o) => acc + (o.items || []).reduce((s, i) => s + i.quantity, 0), 0);
+
+  // 1 Haftalik (Oxirgi 7 kun)
+  const weekOrders = orderHistory.filter(o => {
+    const oTime = new Date(o.timestamp || o.dateOnly).getTime();
+    return oTime >= sevenDaysAgo;
+  });
+  const weekSales = weekOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const weekOrdersCount = weekOrders.length;
+  const weekAvgCheck = weekOrdersCount > 0 ? Math.round(weekSales / weekOrdersCount) : 0;
+  const weekItemsSold = weekOrders.reduce((acc, o) => acc + (o.items || []).reduce((s, i) => s + i.quantity, 0), 0);
+
+  // 1 Oylik (Oxirgi 30 kun)
+  const monthOrders = orderHistory.filter(o => {
+    const oTime = new Date(o.timestamp || o.dateOnly).getTime();
+    return oTime >= thirtyDaysAgo;
+  });
+  const monthSales = monthOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const monthOrdersCount = monthOrders.length;
+  const monthAvgCheck = monthOrdersCount > 0 ? Math.round(monthSales / monthOrdersCount) : 0;
+  const monthItemsSold = monthOrders.reduce((acc, o) => acc + (o.items || []).reduce((s, i) => s + i.quantity, 0), 0);
+
+  return {
+    today: {
+      sales: todaySales,
+      ordersCount: todayOrdersCount,
+      avgCheck: todayAvgCheck,
+      itemsSold: todayItemsSold,
+      orders: todayOrders
+    },
+    week: {
+      sales: weekSales,
+      ordersCount: weekOrdersCount,
+      avgCheck: weekAvgCheck,
+      itemsSold: weekItemsSold,
+      orders: weekOrders
+    },
+    month: {
+      sales: monthSales,
+      ordersCount: monthOrdersCount,
+      avgCheck: monthAvgCheck,
+      itemsSold: monthItemsSold,
+      orders: monthOrders
+    }
+  };
+};
+
 // Waiters Staff List
 const WAITERS_LIST = ["Alisher", "Sardor", "Malika", "Bobur", "Jasur"];
 
@@ -142,66 +215,130 @@ const DEFAULT_PRODUCTS = [
   { id: 'c4', name: 'Chizkeyk', category: 'coffee', price: 24000, icon: 'cake', inStock: true, description: "Klassik Nyu-York chizkeyki mevali qaymoq bilan" }
 ];
 
-// Initial 10 Tables (Exact table 5 example from prompt included!)
+// Initial 10 Tables (Exact state matching Dashboard preview)
 const DEFAULT_TABLES = [
-  { id: 1, name: "Stol 1", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
   { 
-    id: 2, 
-    name: "Stol 2", 
+    id: 1, 
+    name: "Stol 1", 
     status: "occupied", 
     order: [
-      { id: 'f4', name: 'Lavash', price: 28000, quantity: 2, category: 'food' },
-      { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' },
-      { id: 'f5', name: 'French Fries', price: 15000, quantity: 1, category: 'food' }
+      { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+      { id: 'd3', name: 'Coca-Cola 1L', price: 10000, quantity: 1, category: 'drinks' }
     ], 
-    openedAt: "13:20", 
-    waiter: "Sardor", 
-    notes: "Sous alohida idishda berilsin",
-    discountPercent: 0
+    openedAt: "12:45", 
+    waiter: "Alisher", 
+    notes: "", 
+    discountPercent: 0 
   },
-  { id: 3, name: "Stol 3", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
+  { id: 2, name: "Stol 2", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
+  { 
+    id: 3, 
+    name: "Stol 3", 
+    status: "occupied", 
+    order: [
+      { id: 'f6', name: 'Pizza', price: 55000, quantity: 1, category: 'food' },
+      { id: 'f2', name: 'Hamburger', price: 25000, quantity: 1, category: 'food' }
+    ], 
+    openedAt: "13:15", 
+    waiter: "Sardor", 
+    notes: "", 
+    discountPercent: 0 
+  },
   { id: 4, name: "Stol 4", status: "available", order: [], openedAt: null, waiter: "Sardor", notes: "", discountPercent: 0 },
   { 
     id: 5, 
     name: "Stol 5", 
-    status: "occupied", 
+    status: "payment_pending", 
     order: [
-      { id: 'f1', name: 'Hot Dog', price: 18000, quantity: 2, category: 'food' },
-      { id: 'f2', name: 'Hamburger', price: 25000, quantity: 1, category: 'food' },
-      { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 1, category: 'drinks' }
+      { id: 'f2', name: 'Hamburger', price: 25000, quantity: 2, category: 'food' }
     ], 
-    openedAt: "13:45", 
+    openedAt: "13:30", 
     waiter: "Alisher", 
-    notes: "Ikkita stakan bering",
-    discountPercent: 0
+    notes: "Hisob so'radi", 
+    discountPercent: 0 
   },
   { id: 6, name: "Stol 6", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 },
   { 
     id: 7, 
     name: "Stol 7", 
-    status: "payment_pending", 
+    status: "occupied", 
     order: [
-      { id: 'f6', name: 'Pizza', price: 55000, quantity: 1, category: 'food' },
-      { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 1, category: 'food' },
-      { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 1, category: 'drinks' }
+      { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+      { id: 'f4', name: 'Lavash', price: 28000, quantity: 2, category: 'food' },
+      { id: 'd1', name: 'Fanta 0.5L', price: 7000, quantity: 2, category: 'drinks' }
     ], 
-    openedAt: "13:10", 
+    openedAt: "12:50", 
     waiter: "Malika", 
-    notes: "Hisob so'radi",
-    discountPercent: 0
+    notes: "", 
+    discountPercent: 0 
   },
   { id: 8, name: "Stol 8", status: "available", order: [], openedAt: null, waiter: "Bobur", notes: "", discountPercent: 0 },
   { id: 9, name: "Stol 9", status: "available", order: [], openedAt: null, waiter: "Jasur", notes: "", discountPercent: 0 },
-  { id: 10, name: "Stol 10", status: "available", order: [], openedAt: null, waiter: "Alisher", notes: "", discountPercent: 0 }
+  { 
+    id: 10, 
+    name: "Stol 10", 
+    status: "occupied", 
+    order: [
+      { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+      { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 1, category: 'food' }
+    ], 
+    openedAt: "13:00", 
+    waiter: "Alisher", 
+    notes: "", 
+    discountPercent: 0 
+  }
 ];
 
-// Initial Order History (Today's realistic orders)
+// Initial Order History: Realistic orders across today (1 kunlik), last 7 days (1 haftalik) and last 30 days (1 oylik)
 const getInitialHistory = () => {
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  const dateFormatted = formatDate(now);
-  
+  const formatIso = (daysAgo, hours, minutes) => {
+    const d = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+    d.setHours(hours, minutes, 0, 0);
+    return {
+      iso: d.toISOString(),
+      formatted: `${d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`,
+      dateOnly: d.toISOString().split('T')[0]
+    };
+  };
+
+  const t0_1 = formatIso(0, 10, 45);
+  const t0_2 = formatIso(0, 11, 30);
+  const t0_3 = formatIso(0, 12, 15);
+  const t0_4 = formatIso(0, 12, 55);
+  const t0_5 = formatIso(0, 13, 25);
+
+  const t1_1 = formatIso(1, 12, 10);
+  const t1_2 = formatIso(1, 14, 40);
+  const t1_3 = formatIso(1, 18, 20);
+  const t1_4 = formatIso(1, 20, 15);
+
+  const t2_1 = formatIso(2, 13, 0);
+  const t2_2 = formatIso(2, 16, 30);
+  const t2_3 = formatIso(2, 19, 45);
+
+  const t3_1 = formatIso(3, 11, 20);
+  const t3_2 = formatIso(3, 15, 10);
+  const t3_3 = formatIso(3, 18, 50);
+
+  const t5_1 = formatIso(5, 13, 15);
+  const t5_2 = formatIso(5, 17, 30);
+  const t5_3 = formatIso(5, 20, 40);
+
+  const t6_1 = formatIso(6, 12, 0);
+  const t6_2 = formatIso(6, 19, 10);
+
+  const t12_1 = formatIso(12, 13, 30);
+  const t12_2 = formatIso(12, 18, 0);
+
+  const t18_1 = formatIso(18, 14, 15);
+  const t18_2 = formatIso(18, 20, 0);
+
+  const t25_1 = formatIso(25, 12, 45);
+  const t25_2 = formatIso(25, 17, 20);
+
   return [
+    // --- BUGUNGI BUYURTMALAR (1 Kunlik) ---
     {
       id: "ORD-1091",
       tableId: 1,
@@ -217,9 +354,9 @@ const getInitialHistory = () => {
       paymentMethod: "Naqd pul",
       cashReceived: 100000,
       cashChange: 26000,
-      timestamp: `${todayStr}T10:45:00`,
-      formattedDate: `${dateFormatted}, 10:45`,
-      dateOnly: todayStr,
+      timestamp: t0_1.iso,
+      formattedDate: t0_1.formatted,
+      dateOnly: t0_1.dateOnly,
       waiter: "Alisher"
     },
     {
@@ -238,9 +375,9 @@ const getInitialHistory = () => {
       paymentMethod: "Plastik karta",
       cashReceived: 86000,
       cashChange: 0,
-      timestamp: `${todayStr}T11:30:00`,
-      formattedDate: `${dateFormatted}, 11:30`,
-      dateOnly: todayStr,
+      timestamp: t0_2.iso,
+      formattedDate: t0_2.formatted,
+      dateOnly: t0_2.dateOnly,
       waiter: "Sardor"
     },
     {
@@ -258,9 +395,9 @@ const getInitialHistory = () => {
       paymentMethod: "Naqd pul",
       cashReceived: 100000,
       cashChange: 1000,
-      timestamp: `${todayStr}T12:15:00`,
-      formattedDate: `${dateFormatted}, 12:15`,
-      dateOnly: todayStr,
+      timestamp: t0_3.iso,
+      formattedDate: t0_3.formatted,
+      dateOnly: t0_3.dateOnly,
       waiter: "Alisher"
     },
     {
@@ -279,9 +416,9 @@ const getInitialHistory = () => {
       paymentMethod: "Plastik karta",
       cashReceived: 120000,
       cashChange: 0,
-      timestamp: `${todayStr}T12:55:00`,
-      formattedDate: `${dateFormatted}, 12:55`,
-      dateOnly: todayStr,
+      timestamp: t0_4.iso,
+      formattedDate: t0_4.formatted,
+      dateOnly: t0_4.dateOnly,
       waiter: "Malika"
     },
     {
@@ -299,10 +436,441 @@ const getInitialHistory = () => {
       paymentMethod: "Naqd pul",
       cashReceived: 50000,
       cashChange: 20000,
-      timestamp: `${todayStr}T13:25:00`,
-      formattedDate: `${dateFormatted}, 13:25`,
-      dateOnly: todayStr,
+      timestamp: t0_5.iso,
+      formattedDate: t0_5.formatted,
+      dateOnly: t0_5.dateOnly,
       waiter: "Bobur"
+    },
+
+    // --- OXIRGI 7 KUNLIK (1 Haftalik) BUYURTMALAR ---
+    {
+      id: "ORD-1080",
+      tableId: 2,
+      tableName: "Stol 2",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 150000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 150000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 150000,
+      cashChange: 0,
+      timestamp: t1_1.iso,
+      formattedDate: t1_1.formatted,
+      dateOnly: t1_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1079",
+      tableId: 5,
+      tableName: "Stol 5",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 4, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 2, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 166000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 166000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 34000,
+      timestamp: t1_2.iso,
+      formattedDate: t1_2.formatted,
+      dateOnly: t1_2.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1078",
+      tableId: 7,
+      tableName: "Stol 7",
+      items: [
+        { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 3, category: 'food' },
+        { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 114000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 114000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 114000,
+      cashChange: 0,
+      timestamp: t1_3.iso,
+      formattedDate: t1_3.formatted,
+      dateOnly: t1_3.dateOnly,
+      waiter: "Malika"
+    },
+    {
+      id: "ORD-1077",
+      tableId: 9,
+      tableName: "Stol 9",
+      items: [
+        { id: 'f2', name: 'Hamburger', price: 25000, quantity: 4, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 4, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 1, category: 'drinks' }
+      ],
+      subtotal: 180000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 180000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 20000,
+      timestamp: t1_4.iso,
+      formattedDate: t1_4.formatted,
+      dateOnly: t1_4.dateOnly,
+      waiter: "Bobur"
+    },
+    {
+      id: "ORD-1075",
+      tableId: 3,
+      tableName: "Stol 3",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+        { id: 'c3', name: 'Kapuchino', price: 18000, quantity: 3, category: 'coffee' }
+      ],
+      subtotal: 164000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 164000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 164000,
+      cashChange: 0,
+      timestamp: t2_1.iso,
+      formattedDate: t2_1.formatted,
+      dateOnly: t2_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1074",
+      tableId: 1,
+      tableName: "Stol 1",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 5, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 176000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 176000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 24000,
+      timestamp: t2_2.iso,
+      formattedDate: t2_2.formatted,
+      dateOnly: t2_2.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1073",
+      tableId: 8,
+      tableName: "Stol 8",
+      items: [
+        { id: 'f1', name: 'Hot Dog', price: 18000, quantity: 4, category: 'food' },
+        { id: 'd5', name: 'Sharbat (Sok)', price: 12000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 96000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 96000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 96000,
+      cashChange: 0,
+      timestamp: t2_3.iso,
+      formattedDate: t2_3.formatted,
+      dateOnly: t2_3.dateOnly,
+      waiter: "Malika"
+    },
+    {
+      id: "ORD-1065",
+      tableId: 5,
+      tableName: "Stol 5",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 3, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 2, category: 'drinks' },
+        { id: 'c4', name: 'Chizkeyk', price: 24000, quantity: 3, category: 'coffee' }
+      ],
+      subtotal: 277000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 277000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 277000,
+      cashChange: 0,
+      timestamp: t3_1.iso,
+      formattedDate: t3_1.formatted,
+      dateOnly: t3_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1064",
+      tableId: 2,
+      tableName: "Stol 2",
+      items: [
+        { id: 'f2', name: 'Hamburger', price: 25000, quantity: 3, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 3, category: 'food' },
+        { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 144000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 144000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 150000,
+      cashChange: 6000,
+      timestamp: t3_2.iso,
+      formattedDate: t3_2.formatted,
+      dateOnly: t3_2.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1063",
+      tableId: 4,
+      tableName: "Stol 4",
+      items: [
+        { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 4, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 144000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 144000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 144000,
+      cashChange: 0,
+      timestamp: t3_3.iso,
+      formattedDate: t3_3.formatted,
+      dateOnly: t3_3.dateOnly,
+      waiter: "Bobur"
+    },
+    {
+      id: "ORD-1052",
+      tableId: 7,
+      tableName: "Stol 7",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 6, category: 'food' },
+        { id: 'd4', name: 'Suv (0.5L)', price: 5000, quantity: 6, category: 'drinks' }
+      ],
+      subtotal: 198000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 198000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 2000,
+      timestamp: t5_1.iso,
+      formattedDate: t5_1.formatted,
+      dateOnly: t5_1.dateOnly,
+      waiter: "Malika"
+    },
+    {
+      id: "ORD-1051",
+      tableId: 10,
+      tableName: "Stol 10",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 1, category: 'drinks' }
+      ],
+      subtotal: 130000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 130000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 130000,
+      cashChange: 0,
+      timestamp: t5_2.iso,
+      formattedDate: t5_2.formatted,
+      dateOnly: t5_2.dateOnly,
+      waiter: "Jasur"
+    },
+    {
+      id: "ORD-1050",
+      tableId: 1,
+      tableName: "Stol 1",
+      items: [
+        { id: 'f1', name: 'Hot Dog', price: 18000, quantity: 5, category: 'food' },
+        { id: 'd5', name: 'Sharbat (Sok)', price: 12000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 126000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 126000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 150000,
+      cashChange: 24000,
+      timestamp: t5_3.iso,
+      formattedDate: t5_3.formatted,
+      dateOnly: t5_3.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1045",
+      tableId: 3,
+      tableName: "Stol 3",
+      items: [
+        { id: 'f2', name: 'Hamburger', price: 25000, quantity: 4, category: 'food' },
+        { id: 'c2', name: 'Kofe Americano', price: 14000, quantity: 4, category: 'coffee' }
+      ],
+      subtotal: 156000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 156000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 156000,
+      cashChange: 0,
+      timestamp: t6_1.iso,
+      formattedDate: t6_1.formatted,
+      dateOnly: t6_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1044",
+      tableId: 6,
+      tableName: "Stol 6",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 2, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 3, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 2, category: 'drinks' }
+      ],
+      subtotal: 179000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 179000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 200000,
+      cashChange: 21000,
+      timestamp: t6_2.iso,
+      formattedDate: t6_2.formatted,
+      dateOnly: t6_2.dateOnly,
+      waiter: "Alisher"
+    },
+
+    // --- OXIRGI 30 KUNLIK (1 Oylik) BUYURTMALAR ---
+    {
+      id: "ORD-1020",
+      tableId: 2,
+      tableName: "Stol 2",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 8, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 284000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 284000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 284000,
+      cashChange: 0,
+      timestamp: t12_1.iso,
+      formattedDate: t12_1.formatted,
+      dateOnly: t12_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-1019",
+      tableId: 8,
+      tableName: "Stol 8",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 3, category: 'food' },
+        { id: 'c4', name: 'Chizkeyk', price: 24000, quantity: 5, category: 'coffee' }
+      ],
+      subtotal: 285000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 285000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 300000,
+      cashChange: 15000,
+      timestamp: t12_2.iso,
+      formattedDate: t12_2.formatted,
+      dateOnly: t12_2.dateOnly,
+      waiter: "Malika"
+    },
+    {
+      id: "ORD-1008",
+      tableId: 5,
+      tableName: "Stol 5",
+      items: [
+        { id: 'f3', name: 'Cheeseburger', price: 30000, quantity: 6, category: 'food' },
+        { id: 'f5', name: 'French Fries', price: 15000, quantity: 6, category: 'food' },
+        { id: 'd3', name: 'Coca-Cola 1L', price: 12000, quantity: 4, category: 'drinks' }
+      ],
+      subtotal: 318000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 318000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 318000,
+      cashChange: 0,
+      timestamp: t18_1.iso,
+      formattedDate: t18_1.formatted,
+      dateOnly: t18_1.dateOnly,
+      waiter: "Alisher"
+    },
+    {
+      id: "ORD-1007",
+      tableId: 7,
+      tableName: "Stol 7",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 4, category: 'food' },
+        { id: 'd2', name: 'Fanta 2L', price: 20000, quantity: 3, category: 'drinks' }
+      ],
+      subtotal: 280000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 280000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 300000,
+      cashChange: 20000,
+      timestamp: t18_2.iso,
+      formattedDate: t18_2.formatted,
+      dateOnly: t18_2.dateOnly,
+      waiter: "Bobur"
+    },
+    {
+      id: "ORD-0995",
+      tableId: 1,
+      tableName: "Stol 1",
+      items: [
+        { id: 'f4', name: 'Lavash', price: 28000, quantity: 5, category: 'food' },
+        { id: 'f2', name: 'Hamburger', price: 25000, quantity: 4, category: 'food' },
+        { id: 'd1', name: 'Fanta 0.5L', price: 8000, quantity: 6, category: 'drinks' }
+      ],
+      subtotal: 288000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 288000,
+      paymentMethod: "Plastik karta",
+      cashReceived: 288000,
+      cashChange: 0,
+      timestamp: t25_1.iso,
+      formattedDate: t25_1.formatted,
+      dateOnly: t25_1.dateOnly,
+      waiter: "Sardor"
+    },
+    {
+      id: "ORD-0994",
+      tableId: 9,
+      tableName: "Stol 9",
+      items: [
+        { id: 'f6', name: 'Pizza', price: 55000, quantity: 5, category: 'food' },
+        { id: 'c3', name: 'Kapuchino', price: 18000, quantity: 5, category: 'coffee' }
+      ],
+      subtotal: 365000,
+      serviceCharge: 0,
+      discountAmount: 0,
+      total: 365000,
+      paymentMethod: "Naqd pul",
+      cashReceived: 400000,
+      cashChange: 35000,
+      timestamp: t25_2.iso,
+      formattedDate: t25_2.formatted,
+      dateOnly: t25_2.dateOnly,
+      waiter: "Jasur"
     }
   ];
 };
