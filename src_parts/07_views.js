@@ -6,7 +6,8 @@ const DashboardView = ({
   onSelectTable, 
   onOpenReceipt,
   onNavigateTab,
-  onOpenCustomerBill
+  onOpenCustomerBill,
+  currentUser
 }) => {
   const revenueMetrics = calculateRevenueMetrics(orderHistory);
 
@@ -184,22 +185,32 @@ const DashboardView = ({
         </div>
 
         {/* Card 4: Kassir kimligi */}
-        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+        <div 
+          onClick={() => onNavigateTab && onNavigateTab('menu')}
+          className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between hover:shadow-md cursor-pointer transition group"
+          title="Kassir ish stoliga o‘tish"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
               <Icon name="crown" className="w-4 h-4 text-amber-600" />
               <span>Kassir kimligi</span>
             </span>
+            <span className="text-[10px] text-amber-600 font-bold group-hover:translate-x-0.5 transition">Kassir paneli →</span>
           </div>
 
           <div className="flex items-center justify-between gap-2 mt-2">
             <div className="flex items-center gap-2.5">
-              <CashierAvatar size="w-10 h-10" className="border-2 border-stone-100 shadow-xs" />
+              <CashierAvatar 
+                src={currentUser?.avatar} 
+                alt={currentUser?.name || "Alisher Gayratov"} 
+                size="w-10 h-10" 
+                className="border-2 border-stone-100 shadow-xs" 
+              />
               <div>
                 <h5 className="font-extrabold text-xs text-stone-900 leading-tight">
-                  Alisher Gayratov
+                  {currentUser?.name || "Alisher Gayratov"}
                 </h5>
-                <p className="text-[10px] text-stone-400 font-medium">Kassir</p>
+                <p className="text-[10px] text-stone-400 font-medium">{currentUser?.role || "Kassir"}</p>
               </div>
             </div>
 
@@ -635,10 +646,29 @@ const TablesView = ({
   );
 };
 
-// 3. FOOD AND DRINK MENU VIEW
-const MenuView = ({ products, onSelectProduct, tables }) => {
+// 3. KASSIR VA MENYU BOSHQARUVI VIEW
+const MenuView = ({ 
+  products, 
+  onSelectProduct, 
+  tables = [], 
+  currentUser,
+  orderHistory = [],
+  onSelectTable,
+  onProceedToPayment,
+  onOpenCustomerBill
+}) => {
   const [selectedCategory, setSelectedCategory] = React.useState('all');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedTableForOrder, setSelectedTableForOrder] = React.useState(() => {
+    const firstOccupied = (tables || []).find(t => t.status === 'occupied');
+    return firstOccupied ? firstOccupied.id : 1;
+  });
+
+  const revenueMetrics = typeof calculateRevenueMetrics === 'function'
+    ? calculateRevenueMetrics(orderHistory)
+    : { today: { sales: 0, ordersCount: 0, avgCheck: 0 } };
+
+  const occupiedTables = (tables || []).filter(t => t.status === 'occupied' || t.status === 'payment_pending');
 
   const filteredProducts = products.filter(p => {
     const matchesCat = selectedCategory === 'all' || p.category === selectedCategory;
@@ -653,65 +683,198 @@ const MenuView = ({ products, onSelectProduct, tables }) => {
     { id: 'coffee', name: 'Qahva & Shirinliklar', count: products.filter(p => p.category === 'coffee').length },
   ];
 
+  const handleFastAdd = (product) => {
+    if (onSelectProduct) {
+      onSelectProduct(product, selectedTableForOrder);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-stone-900">Kafe taom va ichimliklar menyusi</h2>
-          <p className="text-xs text-stone-500 mt-1">Barcha mahsulotlar, narxlar va buyurtmaga qo‘shish</p>
-        </div>
-
-        {/* Search */}
-        <div className="relative w-full sm:w-72">
-          <Icon name="search" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Mahsulot nomi bo‘yicha qidirish..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-stone-200 rounded-2xl text-xs font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-sm"
-          />
-        </div>
-      </div>
-
-      {/* Category Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {categories.map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              selectedCategory === cat.id
-                ? 'bg-cafe-800 text-amber-300 shadow-md'
-                : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
-            }`}
-          >
-            <span>{cat.name}</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] ${
-              selectedCategory === cat.id ? 'bg-amber-500/30 text-amber-200' : 'bg-stone-100 text-stone-500'
-            }`}>
-              {cat.count}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Product Cards Grid Matching Screenshot */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4.5">
-        {filteredProducts.map(product => {
-          const isOutOfStock = product.inStock === false;
-
-          return (
-            <ProductCard
-              key={product.id}
-              product={product}
-              disabled={isOutOfStock}
-              onSelect={onSelectProduct}
+      {/* 1. KASSIR MA'LUMOTLARI VA SMENA HOLATI BANNERI */}
+      <div className="bg-[#1C120B] text-white rounded-3xl p-5 sm:p-6 border border-stone-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden">
+        <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
+          <div className="relative shrink-0">
+            <CashierAvatar 
+              src={currentUser?.avatar} 
+              alt={currentUser?.name || "Kassir"} 
+              size="w-16 h-16 sm:w-18 sm:h-18" 
+              className="border-2 border-amber-500 shadow-md ring-4 ring-amber-500/20" 
             />
-          );
-        })}
+            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#1C120B]"></span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{currentUser?.name || "Alisher Gayratov"}</h2>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                {currentUser?.role || "Kassir"}
+              </span>
+            </div>
+            <p className="text-xs text-stone-300 mt-1 flex items-center gap-2">
+              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot"></span>
+                Smenada faol
+              </span>
+              <span className="text-stone-500">•</span>
+              <span>Rayhon Cafe Kassir Terminali</span>
+            </p>
+            <p className="text-[11px] text-stone-400 font-mono mt-0.5">{currentUser?.email || "alisher@rayhon.uz"}</p>
+          </div>
+        </div>
+
+        {/* Shift Stats Counters */}
+        <div className="grid grid-cols-3 gap-2.5 w-full md:w-auto relative z-10">
+          <div className="bg-[#281A12] border border-amber-900/40 rounded-2xl p-3 text-center min-w-[100px]">
+            <span className="text-[10px] text-amber-400 font-bold block uppercase tracking-wider">Bugungi kassa</span>
+            <span className="text-sm sm:text-base font-black font-mono text-white mt-0.5 block">{formatUZS(revenueMetrics.today.sales)}</span>
+          </div>
+          <div className="bg-[#281A12] border border-amber-900/40 rounded-2xl p-3 text-center min-w-[90px]">
+            <span className="text-[10px] text-amber-400 font-bold block uppercase tracking-wider">Cheklar</span>
+            <span className="text-sm sm:text-base font-black font-mono text-white mt-0.5 block">{revenueMetrics.today.ordersCount} ta</span>
+          </div>
+          <div className="bg-[#281A12] border border-amber-900/40 rounded-2xl p-3 text-center min-w-[90px]">
+            <span className="text-[10px] text-amber-400 font-bold block uppercase tracking-wider">O‘rtacha chek</span>
+            <span className="text-sm sm:text-base font-black font-mono text-white mt-0.5 block">{formatUZS(revenueMetrics.today.avgCheck)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. BAND STOLLARNING KASSIR TO'LOV VA HISOB PANELI */}
+      {occupiedTables.length > 0 && (
+        <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+              <h3 className="font-extrabold text-sm text-stone-900">
+                To‘lov kutilayotgan band stollar ({occupiedTables.length} ta)
+              </h3>
+            </div>
+            <span className="text-xs text-stone-500 font-medium">Hisob-kitob qilish va mijozga hisob aytish</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {occupiedTables.map(t => {
+              const subtotal = (t.order || []).reduce((sum, i) => sum + (i.price * i.quantity), 0);
+              const itemsCount = (t.order || []).reduce((sum, i) => sum + i.quantity, 0);
+
+              return (
+                <div key={t.id} className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col justify-between gap-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-black text-sm text-stone-900">Stol {t.id} ({t.name})</span>
+                      <p className="text-[11px] text-stone-500">{itemsCount} ta taom · {t.openedAt || 'Band'}</p>
+                    </div>
+                    <span className="font-mono font-extrabold text-sm text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
+                      {formatUZS(subtotal)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-stone-200/60">
+                    <button
+                      onClick={() => onOpenCustomerBill && onOpenCustomerBill(t)}
+                      className="flex-1 py-1.5 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow-2xs flex items-center justify-center gap-1.5 transition"
+                      title="Mijoz nima yeganini hisoblash va aytish"
+                    >
+                      <Icon name="speech" className="w-3.5 h-3.5" />
+                      <span>Mijozga aytish</span>
+                    </button>
+                    <button
+                      onClick={() => onProceedToPayment && onProceedToPayment(t)}
+                      className="py-1.5 px-3 rounded-xl bg-cafe-800 hover:bg-cafe-900 text-white font-extrabold text-xs shadow-2xs flex items-center gap-1 transition"
+                    >
+                      <Icon name="cash" className="w-3.5 h-3.5" />
+                      <span>To‘lov</span>
+                    </button>
+                    <button
+                      onClick={() => onSelectTable && onSelectTable(t.id)}
+                      className="p-1.5 rounded-xl bg-white hover:bg-stone-100 text-stone-600 border border-stone-200 transition"
+                      title="Buyurtmani ko‘rish"
+                    >
+                      <Icon name="eye" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 3. TEZKOR BUYURTMA VA MAHSULOTLAR KATALOGI */}
+      <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-black text-stone-900">Tezkor taomlar menyusi</h3>
+            <p className="text-xs text-stone-500">Mahsulotni tanlang va to‘g‘ridan-to‘g‘ri stolga buyurtma qo‘shing</p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-stone-600">Buyurtma beriladigan stol:</span>
+            <select
+              value={selectedTableForOrder}
+              onChange={(e) => setSelectedTableForOrder(parseInt(e.target.value, 10))}
+              className="py-1.5 px-3 rounded-xl bg-stone-100 border border-stone-300 text-xs font-black text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              {tables.map(t => (
+                <option key={t.id} value={t.id}>
+                  Stol {t.id} ({t.name}) — {t.status === 'occupied' ? '🔴 Band' : '🟢 Bo‘sh'}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Search & Category Pills */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-stone-100">
+          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 scrollbar-none">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  selectedCategory === cat.id
+                    ? 'bg-amber-500 text-stone-950 font-black shadow-xs'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                }`}
+              >
+                <span>{cat.name}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                  selectedCategory === cat.id ? 'bg-stone-950 text-amber-300' : 'bg-stone-200 text-stone-600'
+                }`}>
+                  {cat.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Icon name="search" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Mahsulot nomi bo‘yicha qidirish..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
+            />
+          </div>
+        </div>
+
+        {/* Product Cards Grid Matching Screenshot */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pt-2">
+          {filteredProducts.map(product => {
+            const isOutOfStock = product.inStock === false;
+
+            return (
+              <ProductCard
+                key={product.id}
+                product={product}
+                disabled={isOutOfStock}
+                onSelect={() => handleFastAdd(product)}
+              />
+            );
+          })}
+        </div>
       </div>
 
     </div>

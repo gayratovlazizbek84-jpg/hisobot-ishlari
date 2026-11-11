@@ -56,17 +56,54 @@ const App = () => {
         name: "Alisher Gayratov",
         role: "Kassir",
         email: "alisher@rayhon.uz",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80"
       };
     } catch (e) {
       return {
         name: "Alisher Gayratov",
         role: "Kassir",
         email: "alisher@rayhon.uz",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80"
       };
     }
   });
+
+  // Dark Mode Theme State & Persistence
+  const [isDarkMode, setIsDarkMode] = React.useState(() => {
+    try {
+      return localStorage.getItem('RAYHON_CAFE_THEME') === 'dark';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+      }
+    } catch (e) {}
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('RAYHON_CAFE_THEME', next ? 'dark' : 'light');
+      } catch (e) {}
+      if (soundEnabled) playSound('click');
+      addToast(
+        next ? 'info' : 'success', 
+        next ? 'Qorong‘u rejim yoqildi 🌙' : 'Yorug‘lik rejimi yoqildi ☀️', 
+        next ? 'Tungi kafe muhiti faollashtirildi' : 'Kunduzgi yorug‘ muhit faollashtirildi'
+      );
+      return next;
+    });
+  };
 
   // Global Header Search
   const [headerSearch, setHeaderSearch] = React.useState('');
@@ -542,7 +579,12 @@ const App = () => {
             className="flex items-center gap-3 p-2.5 rounded-2xl bg-[#24170F] border border-amber-900/40 cursor-pointer hover:border-amber-500/50 transition"
             title="Profil / Kirish oynasi"
           >
-            <CashierAvatar size="w-10 h-10" className="border border-amber-400/50" />
+            <CashierAvatar 
+              src={currentUser?.avatar} 
+              alt={currentUser?.name || 'Alisher (Kassir)'} 
+              size="w-10 h-10" 
+              className="border border-amber-400/50" 
+            />
             <div className="min-w-0 flex-1">
               <h5 className="font-black text-xs text-white truncate">{currentUser?.name || 'Alisher (Kassir)'}</h5>
               <p className="text-[10px] text-emerald-400 font-bold flex items-center gap-1.5 mt-0.5">
@@ -636,7 +678,7 @@ const App = () => {
                 value={headerSearch}
                 onChange={(e) => setHeaderSearch(e.target.value)}
                 placeholder="Stol yoki buyurtma qidirish..."
-                className="w-full bg-[#EFE9DF] hover:bg-[#EAE2D6] focus:bg-white text-stone-800 placeholder-stone-400 text-xs font-semibold pl-9.5 pr-8 py-2.5 rounded-full border border-stone-300/40 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition"
+                className="w-full bg-[#EFE9DF] hover:bg-[#EAE2D6] focus:bg-white text-stone-800 placeholder-stone-400 text-xs font-semibold pl-11 pr-8 py-2.5 rounded-full border border-stone-300/40 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition"
               />
               {headerSearch && (
                 <button
@@ -738,16 +780,17 @@ const App = () => {
               </span>
             </div>
 
-            {/* Sun Icon Button */}
+            {/* Dark / Light Mode Toggle Button */}
             <button
-              onClick={() => {
-                if (soundEnabled) playSound('click');
-                addToast('info', 'Yorug‘lik rejimi faol', 'Kafening iliq kunduzgi muhiti yoqilgan');
-              }}
+              onClick={toggleDarkMode}
               className="w-9 h-9 rounded-full bg-[#EFE9DF] hover:bg-[#E5DDD2] border border-stone-300/40 text-stone-700 flex items-center justify-center transition shadow-2xs"
-              title="Yorug‘lik rejimi"
+              title={isDarkMode ? "Yorug‘lik rejimiga o‘tish (Kunduzgi)" : "Qorong‘u rejimga o‘tish (Tungi)"}
             >
-              <Icon name="sun" className="w-4 h-4 text-amber-700" />
+              {isDarkMode ? (
+                <Icon name="sun" className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Icon name="moon" className="w-4 h-4 text-stone-700" />
+              )}
             </button>
 
             {/* Notification Bell with Badge 2 */}
@@ -771,7 +814,12 @@ const App = () => {
               className="relative cursor-pointer group"
               title={`${currentUser?.name || 'Alisher Gayratov'} (${currentUser?.role || 'Kassir'}) - Chiqish / Kirish oynasi`}
             >
-              <CashierAvatar size="w-9 h-9" className="border border-stone-300/60 shadow-2xs group-hover:scale-105 transition" />
+              <CashierAvatar 
+                src={currentUser?.avatar} 
+                alt={currentUser?.name || 'Alisher Gayratov'} 
+                size="w-9 h-9" 
+                className="border border-stone-300/60 shadow-2xs group-hover:scale-105 transition" 
+              />
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white"></span>
             </div>
 
@@ -790,6 +838,7 @@ const App = () => {
                 onOpenReceipt={(order) => setReceiptOrder(order)}
                 onNavigateTab={(tab) => setActiveTab(tab)}
                 onOpenCustomerBill={(table) => setCustomerBillTable(table)}
+                currentUser={currentUser}
               />
             )}
 
@@ -808,10 +857,14 @@ const App = () => {
               <MenuView
                 products={products}
                 tables={tables}
-                onSelectProduct={(product) => {
-                  const firstOccupiedOrAvail = tables.find(t => t.status === 'occupied') || tables.find(t => t.status === 'available') || tables[0];
-                  handleSelectTable(firstOccupiedOrAvail.id);
-                  handleAddItem(firstOccupiedOrAvail.id, product);
+                currentUser={currentUser}
+                orderHistory={orderHistory}
+                onSelectTable={handleSelectTable}
+                onProceedToPayment={handleProceedToPayment}
+                onOpenCustomerBill={(table) => setCustomerBillTable(table)}
+                onSelectProduct={(product, targetTableId) => {
+                  const tableId = targetTableId || (tables.find(t => t.status === 'occupied')?.id || tables.find(t => t.status === 'available')?.id || 1);
+                  handleAddItem(tableId, product);
                 }}
               />
             )}

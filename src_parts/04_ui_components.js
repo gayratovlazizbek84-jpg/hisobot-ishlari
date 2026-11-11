@@ -116,24 +116,30 @@ const TableStatusBadge = ({ status }) => {
   }
 };
 
-// Cashier Avatar Component with Offline Fallback
-const CashierAvatar = ({ size = "w-10 h-10", className = "" }) => {
+// Cashier Avatar Component with Dynamic Src & Offline Fallback
+const CashierAvatar = ({ src, size = "w-10 h-10", className = "", alt = "Alisher Gayratov" }) => {
+  const avatarSrc = src || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80";
   const [hasError, setHasError] = React.useState(false);
 
-  if (hasError) {
+  React.useEffect(() => {
+    setHasError(false);
+  }, [avatarSrc]);
+
+  if (hasError || !avatarSrc) {
+    const initials = (alt || 'AG').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     return (
-      <div className={`${size} rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-300 text-cafe-950 flex items-center justify-center font-black text-xs shadow-inner ${className}`}>
-        AG
+      <div className={`${size} rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-300 text-stone-950 flex items-center justify-center font-black text-xs shadow-inner uppercase shrink-0 ${className}`}>
+        {initials}
       </div>
     );
   }
 
   return (
     <img
-      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
-      alt="Alisher"
+      src={avatarSrc}
+      alt={alt}
       onError={() => setHasError(true)}
-      className={`${size} rounded-full object-cover ${className}`}
+      className={`${size} rounded-full object-cover shrink-0 ${className}`}
     />
   );
 };
@@ -275,11 +281,21 @@ const LoginCard = ({ onLoginSuccess, onGoToRegister }) => {
       setError("Iltimos, barcha maydonlarni to‘ldiring");
       return;
     }
+    let existingUser = null;
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_AUTH_USER');
+      if (saved) existingUser = JSON.parse(saved);
+    } catch(e) {}
+
     const user = {
-      name: email.includes('alisher') ? "Alisher Gayratov" : "Kassir Foydalanuvchi",
+      name: (existingUser && existingUser.email === email && existingUser.name) 
+        ? existingUser.name 
+        : (email.includes('alisher') ? "Alisher Gayratov" : (existingUser?.name || "Kassir")),
       email: email,
       role: "Kassir",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+      avatar: (existingUser && existingUser.avatar) 
+        ? existingUser.avatar 
+        : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80"
     };
     try {
       localStorage.setItem('RAYHON_CAFE_AUTH_USER', JSON.stringify(user));
@@ -466,7 +482,30 @@ const RegisterCard = ({ onRegisterSuccess, onGoToLogin }) => {
   const [password, setPassword] = React.useState('123456');
   const [confirmPassword, setConfirmPassword] = React.useState('123456');
   const [showPassword, setShowPassword] = React.useState(false);
+  const [avatar, setAvatar] = React.useState('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80');
   const [error, setError] = React.useState('');
+
+  const presetAvatars = [
+    { label: "Alisher", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80" },
+    { label: "Sardor", url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80" },
+    { label: "Malika", url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=250&q=80" },
+    { label: "Jasur", url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=250&q=80" }
+  ];
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      if (file.size > 3 * 1024 * 1024) {
+        setError("Rasm hajmi 3MB dan oshmasligi kerak");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatar(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
@@ -482,7 +521,7 @@ const RegisterCard = ({ onRegisterSuccess, onGoToLogin }) => {
       name: fullName,
       email: email,
       role: "Kassir",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+      avatar: avatar
     };
     try {
       localStorage.setItem('RAYHON_CAFE_AUTH_USER', JSON.stringify(user));
@@ -534,18 +573,62 @@ const RegisterCard = ({ onRegisterSuccess, onGoToLogin }) => {
 
       {/* Right Side: Register Form */}
       <div className="p-6 sm:p-8 flex flex-col justify-center bg-white">
-        <div className="text-center mb-5">
+        <div className="text-center mb-4">
           <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">Ro‘yxatdan o‘tish</h2>
-          <p className="text-xs text-stone-500 mt-1">Yangi hisob yaratish uchun ma’lumotlarni kiriting</p>
+          <p className="text-xs text-stone-500 mt-0.5">Yangi hisob yaratish uchun ma’lumotlarni kiriting</p>
         </div>
 
         {error && (
-          <div className="mb-3.5 p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold text-center">
+          <div className="mb-3 p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold text-center">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Avatar Selector / Upload */}
+          <div className="flex items-center gap-3 p-2 bg-stone-50 rounded-2xl border border-stone-200">
+            <div className="relative group shrink-0">
+              <CashierAvatar src={avatar} size="w-12 h-12" className="border-2 border-amber-500 shadow-xs" />
+              <label className="absolute inset-0 bg-stone-950/60 rounded-full flex items-center justify-center cursor-pointer transition opacity-0 group-hover:opacity-100 text-white" title="Rasm yuklash">
+                <Icon name="camera" className="w-4 h-4 text-amber-300" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[11px] font-bold text-stone-700 block">Profil rasmi:</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                {presetAvatars.map((p, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setAvatar(p.url)}
+                    className={`w-6 h-6 rounded-full overflow-hidden border transition ${
+                      avatar === p.url ? 'ring-2 ring-amber-500 border-white scale-110' : 'opacity-70 hover:opacity-100'
+                    }`}
+                    title={p.label}
+                  >
+                    <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+                <label className="px-2 py-0.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-[10px] font-extrabold cursor-pointer transition flex items-center gap-1 ml-auto">
+                  <Icon name="camera" className="w-3 h-3 text-amber-800" />
+                  <span>Rasm qo‘yish</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
           {/* Full Name */}
           <div className="relative">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
@@ -616,7 +699,7 @@ const RegisterCard = ({ onRegisterSuccess, onGoToLogin }) => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full mt-1.5 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-amber-500/25 flex items-center justify-center gap-2 transition"
+            className="w-full mt-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-amber-500/25 flex items-center justify-center gap-2 transition"
           >
             <span>Ro‘yxatdan o‘tish</span>
             <Icon name="arrow-right" className="w-4 h-4" />
