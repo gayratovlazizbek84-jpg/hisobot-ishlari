@@ -6,9 +6,7 @@ const DashboardView = ({
   onSelectTable, 
   onOpenReceipt,
   onNavigateTab,
-  onOpenCustomerBill,
-  onLoginSuccess,
-  onRegisterSuccess
+  onOpenCustomerBill
 }) => {
   const revenueMetrics = calculateRevenueMetrics(orderHistory);
 
@@ -432,47 +430,6 @@ const DashboardView = ({
           </div>
         </div>
 
-      </div>
-
-      {/* 4. BOTTOM SECTION: AUTHENTICATION CARDS (TIZIMGA KIRISH & RO‘YXATDAN O‘TISH) MATCHING EXACT SCREENSHOT */}
-      <div id="auth-cards-section" className="mt-8 pt-6 border-t border-stone-300/60">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-2xl bg-amber-500/15 text-amber-900 border border-amber-500/30">
-              <Icon name="lock" className="w-5 h-5 text-amber-800" />
-            </div>
-            <div>
-              <h4 className="text-base font-black text-stone-900 tracking-tight">Tizimga kirish va Ro‘yxatdan o‘tish</h4>
-              <p className="text-xs text-stone-500 font-medium">Kassir va boshqaruvchi uchun maxsus xavfsiz avtorizatsiya panellari</p>
-            </div>
-          </div>
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/70 text-amber-900 border border-amber-200/80 text-xs font-black">
-            <span>☕ Rayhon Cafe ID</span>
-          </span>
-        </div>
-
-        {/* 2-Columns Side-by-Side: Tizimga kirish (Left) and Ro'yxatdan o'tish (Right) */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
-          <div id="login-card-container" className="h-full flex">
-            <LoginCard
-              onLoginSuccess={onLoginSuccess}
-              onGoToRegister={() => {
-                const el = document.getElementById('register-card-container');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-            />
-          </div>
-
-          <div id="register-card-container" className="h-full flex">
-            <RegisterCard
-              onRegisterSuccess={onRegisterSuccess}
-              onGoToLogin={() => {
-                const el = document.getElementById('login-card-container');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-            />
-          </div>
-        </div>
       </div>
 
     </div>

@@ -693,7 +693,7 @@ const App = () => {
                             className="p-2 rounded-xl hover:bg-amber-50 cursor-pointer flex items-center justify-between text-xs transition"
                           >
                             <span className="font-bold text-stone-800">{p.name}</span>
-                            <span className="font-mono text-amber-800 font-extrabold">{formatCurrency(p.price)}</span>
+                            <span className="font-mono text-amber-800 font-extrabold">{formatUZS(p.price)}</span>
                           </div>
                         ))}
                       </div>
@@ -790,14 +790,6 @@ const App = () => {
                 onOpenReceipt={(order) => setReceiptOrder(order)}
                 onNavigateTab={(tab) => setActiveTab(tab)}
                 onOpenCustomerBill={(table) => setCustomerBillTable(table)}
-                onLoginSuccess={(user) => {
-                  if (user) setCurrentUser(user);
-                  addToast('success', `Xush kelibsiz, ${user?.name || 'Alisher'}!`, 'Tizimga muvaffaqiyatli kirdingiz');
-                }}
-                onRegisterSuccess={(user) => {
-                  if (user) setCurrentUser(user);
-                  addToast('success', `Tabriklaymiz, ${user?.name || 'Alisher'}!`, 'Yangi hisobingiz yaratildi');
-                }}
               />
             )}
 

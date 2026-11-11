@@ -313,17 +313,17 @@ const LoginCard = ({ onLoginSuccess, onGoToRegister }) => {
         {/* Center Latte Art Cup on Saucer with Beans illustration */}
         <div className="relative z-10 my-4 flex items-center justify-center">
           <div className="relative flex flex-col items-center">
-            <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/40 relative">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-[#3D2516]/80 ring-2 ring-amber-500/30 flex items-center justify-center relative bg-[#1B110A]">
               <img
                 src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80"
                 alt="Latte Cup"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
             </div>
-            <div className="mt-2 text-[10px] text-amber-300/80 font-mono flex items-center gap-1.5">
-              <span>☕ Yangi qovurilgan donalar</span>
-            </div>
+            <p className="mt-3 text-xs text-amber-200/90 font-medium tracking-wide">
+              Iliq muhit va mazali qahva ☕
+            </p>
           </div>
         </div>
 
@@ -513,17 +513,17 @@ const RegisterCard = ({ onRegisterSuccess, onGoToLogin }) => {
 
         <div className="relative z-10 my-4 flex items-center justify-center">
           <div className="relative flex flex-col items-center">
-            <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/40 relative">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-[#3D2516]/80 ring-2 ring-amber-500/30 flex items-center justify-center relative bg-[#1B110A]">
               <img
                 src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80"
                 alt="Latte Cup"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
             </div>
-            <div className="mt-2 text-[10px] text-amber-300/80 font-mono flex items-center gap-1.5">
-              <span>🌿 Kafemizga xush kelibsiz!</span>
-            </div>
+            <p className="mt-3 text-xs text-amber-200/90 font-medium tracking-wide">
+              Biz bilan yangi marralar sari ✨
+            </p>
           </div>
         </div>
 

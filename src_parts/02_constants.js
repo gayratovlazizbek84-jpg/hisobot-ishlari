@@ -72,6 +72,7 @@ const formatUZS = (num) => {
   if (num === null || num === undefined || isNaN(num)) return "0 so'm";
   return Number(num).toLocaleString('uz-UZ').replace(/,/g, ' ') + " so'm";
 };
+const formatCurrency = formatUZS;
 
 const formatTime = (dateObj) => {
   const d = dateObj ? new Date(dateObj) : new Date();

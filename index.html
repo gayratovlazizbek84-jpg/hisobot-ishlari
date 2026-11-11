@@ -203,6 +203,7 @@ const formatUZS = (num) => {
   if (num === null || num === undefined || isNaN(num)) return "0 so'm";
   return Number(num).toLocaleString('uz-UZ').replace(/,/g, ' ') + " so'm";
 };
+const formatCurrency = formatUZS;
 
 const formatTime = (dateObj) => {
   const d = dateObj ? new Date(dateObj) : new Date();
@@ -2049,17 +2050,17 @@ const LoginCard = ({ onLoginSuccess, onGoToRegister }) => {
         {/* Center Latte Art Cup on Saucer with Beans illustration */}
         <div className="relative z-10 my-4 flex items-center justify-center">
           <div className="relative flex flex-col items-center">
-            <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/40 relative">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-[#3D2516]/80 ring-2 ring-amber-500/30 flex items-center justify-center relative bg-[#1B110A]">
               <img
                 src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80"
                 alt="Latte Cup"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
             </div>
-            <div className="mt-2 text-[10px] text-amber-300/80 font-mono flex items-center gap-1.5">
-              <span>☕ Yangi qovurilgan donalar</span>
-            </div>
+            <p className="mt-3 text-xs text-amber-200/90 font-medium tracking-wide">
+              Iliq muhit va mazali qahva ☕
+            </p>
           </div>
         </div>
 
@@ -2249,17 +2250,17 @@ const RegisterCard = ({ onRegisterSuccess, onGoToLogin }) => {
 
         <div className="relative z-10 my-4 flex items-center justify-center">
           <div className="relative flex flex-col items-center">
-            <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/40 relative">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-[#3D2516]/80 ring-2 ring-amber-500/30 flex items-center justify-center relative bg-[#1B110A]">
               <img
                 src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80"
                 alt="Latte Cup"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
             </div>
-            <div className="mt-2 text-[10px] text-amber-300/80 font-mono flex items-center gap-1.5">
-              <span>🌿 Kafemizga xush kelibsiz!</span>
-            </div>
+            <p className="mt-3 text-xs text-amber-200/90 font-medium tracking-wide">
+              Biz bilan yangi marralar sari ✨
+            </p>
           </div>
         </div>
 
@@ -3374,9 +3375,7 @@ const DashboardView = ({
   onSelectTable, 
   onOpenReceipt,
   onNavigateTab,
-  onOpenCustomerBill,
-  onLoginSuccess,
-  onRegisterSuccess
+  onOpenCustomerBill
 }) => {
   const revenueMetrics = calculateRevenueMetrics(orderHistory);
 
@@ -3800,47 +3799,6 @@ const DashboardView = ({
           </div>
         </div>
 
-      </div>
-
-      {/* 4. BOTTOM SECTION: AUTHENTICATION CARDS (TIZIMGA KIRISH & RO‘YXATDAN O‘TISH) MATCHING EXACT SCREENSHOT */}
-      <div id="auth-cards-section" className="mt-8 pt-6 border-t border-stone-300/60">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-2xl bg-amber-500/15 text-amber-900 border border-amber-500/30">
-              <Icon name="lock" className="w-5 h-5 text-amber-800" />
-            </div>
-            <div>
-              <h4 className="text-base font-black text-stone-900 tracking-tight">Tizimga kirish va Ro‘yxatdan o‘tish</h4>
-              <p className="text-xs text-stone-500 font-medium">Kassir va boshqaruvchi uchun maxsus xavfsiz avtorizatsiya panellari</p>
-            </div>
-          </div>
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/70 text-amber-900 border border-amber-200/80 text-xs font-black">
-            <span>☕ Rayhon Cafe ID</span>
-          </span>
-        </div>
-
-        {/* 2-Columns Side-by-Side: Tizimga kirish (Left) and Ro'yxatdan o'tish (Right) */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
-          <div id="login-card-container" className="h-full flex">
-            <LoginCard
-              onLoginSuccess={onLoginSuccess}
-              onGoToRegister={() => {
-                const el = document.getElementById('register-card-container');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-            />
-          </div>
-
-          <div id="register-card-container" className="h-full flex">
-            <RegisterCard
-              onRegisterSuccess={onRegisterSuccess}
-              onGoToLogin={() => {
-                const el = document.getElementById('login-card-container');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-            />
-          </div>
-        </div>
       </div>
 
     </div>
@@ -5840,7 +5798,7 @@ const App = () => {
                             className="p-2 rounded-xl hover:bg-amber-50 cursor-pointer flex items-center justify-between text-xs transition"
                           >
                             <span className="font-bold text-stone-800">{p.name}</span>
-                            <span className="font-mono text-amber-800 font-extrabold">{formatCurrency(p.price)}</span>
+                            <span className="font-mono text-amber-800 font-extrabold">{formatUZS(p.price)}</span>
                           </div>
                         ))}
                       </div>
@@ -5937,14 +5895,6 @@ const App = () => {
                 onOpenReceipt={(order) => setReceiptOrder(order)}
                 onNavigateTab={(tab) => setActiveTab(tab)}
                 onOpenCustomerBill={(table) => setCustomerBillTable(table)}
-                onLoginSuccess={(user) => {
-                  if (user) setCurrentUser(user);
-                  addToast('success', `Xush kelibsiz, ${user?.name || 'Alisher'}!`, 'Tizimga muvaffaqiyatli kirdingiz');
-                }}
-                onRegisterSuccess={(user) => {
-                  if (user) setCurrentUser(user);
-                  addToast('success', `Tabriklaymiz, ${user?.name || 'Alisher'}!`, 'Yangi hisobingiz yaratildi');
-                }}
               />
             )}
 
