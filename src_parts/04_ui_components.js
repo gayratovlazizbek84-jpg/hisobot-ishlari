@@ -186,6 +186,81 @@ const StatCard = ({ title, value, subtext, icon, trend, color = "amber" }) => {
   );
 };
 
+// PRODUCT CARD (Matching screenshot media_1794389708896_9c2eb201.jpg)
+const ProductCard = ({ product, onSelect, inCartQuantity = 0, disabled = false }) => {
+  const isDrinks = product.category === 'drinks';
+  const badgeLabel = product.badge || (isDrinks ? 'ICHIMLIK' : 'TAOM');
+
+  return (
+    <div
+      className={`bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group h-full relative ${
+        disabled ? 'opacity-50 cursor-not-allowed' : ''
+      }`}
+    >
+      {/* Top Image Showcase Area */}
+      <div>
+        <div className="w-full h-40 sm:h-44 rounded-2xl flex items-center justify-center p-2 mb-3 bg-[#FAF8F5]/80 overflow-hidden relative group-hover:scale-105 transition-transform duration-300">
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="max-h-full max-w-full object-contain drop-shadow-md"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <div
+            className={`w-full h-full items-center justify-center ${product.image ? 'hidden' : 'flex'}`}
+          >
+            <FoodIcon name={product.icon} className="w-24 h-24" />
+          </div>
+
+          {/* Cart Quantity Badge (if in active table order) */}
+          {inCartQuantity > 0 && (
+            <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-amber-500 text-stone-950 font-black text-xs shadow-md border border-amber-300 animate-scale-up">
+              {inCartQuantity}x
+            </div>
+          )}
+        </div>
+
+        {/* Category Badge & Product Info */}
+        <div className="space-y-1">
+          <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider bg-[#FDF0E6] text-[#C05621] inline-block mb-1">
+            {badgeLabel}
+          </span>
+          <h3 className="font-black text-stone-900 text-base sm:text-lg tracking-tight leading-snug">
+            {product.name}
+          </h3>
+          <p className="text-xs text-stone-500 font-medium leading-relaxed mt-1 line-clamp-2 min-h-[34px]">
+            {product.description || "Mazali ta'm va yuqori sifatli ingredientlar"}
+          </p>
+        </div>
+      </div>
+
+      {/* Card Footer: Price & Add Button */}
+      <div className="pt-3.5 mt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+        <span className="font-black text-sm sm:text-base text-stone-900 tracking-tight">
+          {formatUZS(product.price)}
+        </span>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onSelect) onSelect(product);
+          }}
+          className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-500 to-amber-600 hover:brightness-105 active:scale-95 disabled:opacity-50 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow-sm transition shrink-0"
+        >
+          <Icon name="cart" className="w-3.5 h-3.5" />
+          <span>Qo‘shish</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // REUSABLE LOGIN CARD (Matching screenshot bottom-left)
 const LoginCard = ({ onLoginSuccess, onGoToRegister }) => {
   const [email, setEmail] = React.useState('alisher@rayhon.uz');

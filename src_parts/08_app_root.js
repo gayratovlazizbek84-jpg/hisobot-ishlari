@@ -12,7 +12,7 @@ const App = () => {
 
   const [products, setProducts] = React.useState(() => {
     try {
-      const saved = localStorage.getItem('RAYHON_CAFE_PRODUCTS_V1');
+      const saved = localStorage.getItem('RAYHON_CAFE_PRODUCTS_V2');
       return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
     } catch (e) {
       return DEFAULT_PRODUCTS;
@@ -109,7 +109,7 @@ const App = () => {
 
   React.useEffect(() => {
     try {
-      localStorage.setItem('RAYHON_CAFE_PRODUCTS_V1', JSON.stringify(products));
+      localStorage.setItem('RAYHON_CAFE_PRODUCTS_V2', JSON.stringify(products));
     } catch (e) {}
   }, [products]);
 

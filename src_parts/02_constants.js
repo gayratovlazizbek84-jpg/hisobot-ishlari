@@ -191,28 +191,174 @@ const calculateRevenueMetrics = (orderHistory) => {
 // Waiters Staff List
 const WAITERS_LIST = ["Alisher", "Sardor", "Malika", "Bobur", "Jasur"];
 
-// Initial Sample Products
+// Initial Sample Products (Matching exact 10 products from screenshot media_1794389708896_9c2eb201.jpg)
 const DEFAULT_PRODUCTS = [
-  // FOOD (Taomlar)
-  { id: 'f1', name: 'Hot Dog', category: 'food', price: 18000, icon: 'hotdog', inStock: true, description: "Xantalli va sosiskali klassik issiq hot-dog" },
-  { id: 'f2', name: 'Hamburger', category: 'food', price: 25000, icon: 'hamburger', inStock: true, description: "Shirali go'shtli kotlet va maxsus sousli burger" },
-  { id: 'f3', name: 'Cheeseburger', category: 'food', price: 30000, icon: 'cheeseburger', inStock: true, description: "Eritilgan cheddar pishloqli mazali burger" },
-  { id: 'f4', name: 'Lavash', category: 'food', price: 28000, icon: 'lavash', inStock: true, description: "Grilda qarsildoq pishirilgan tovuqli/go'shtli lavash" },
-  { id: 'f5', name: 'French Fries', category: 'food', price: 15000, icon: 'fries', inStock: true, description: "Oltin rang qarsildoq fri kartoshkasi" },
-  { id: 'f6', name: 'Pizza', category: 'food', price: 55000, icon: 'pizza', inStock: true, description: "Mozzarella pishlog'i va pepperoni kolbasali pitsa" },
+  // 1. Hot Dog
+  {
+    id: 'f1',
+    name: 'Hot Dog',
+    category: 'food',
+    badge: 'TAOM',
+    price: 18000,
+    icon: 'hotdog',
+    inStock: true,
+    description: "Xantal va sosiskali klassik issiq hot-dog",
+    image: "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=600&q=80"
+  },
+  // 2. Hamburger
+  {
+    id: 'f2',
+    name: 'Hamburger',
+    category: 'food',
+    badge: 'TAOM',
+    price: 25000,
+    icon: 'hamburger',
+    inStock: true,
+    description: "Shirali go‘shtli kotlet va maxsus sousli burger",
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80"
+  },
+  // 3. Cheeseburger
+  {
+    id: 'f3',
+    name: 'Cheeseburger',
+    category: 'food',
+    badge: 'TAOM',
+    price: 30000,
+    icon: 'cheeseburger',
+    inStock: true,
+    description: "Eritilgan cheddar pishloqli mazali burger",
+    image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=600&q=80"
+  },
+  // 4. Lavash
+  {
+    id: 'f4',
+    name: 'Lavash',
+    category: 'food',
+    badge: 'TAOM',
+    price: 28000,
+    icon: 'lavash',
+    inStock: true,
+    description: "Grilda qarsildoq pishirilgan tovuqli go‘shtli lavash",
+    image: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=600&q=80"
+  },
+  // 5. French Fries
+  {
+    id: 'f5',
+    name: 'French Fries',
+    category: 'food',
+    badge: 'TAOM',
+    price: 15000,
+    icon: 'fries',
+    inStock: true,
+    description: "Oltin rang qarsildoq fri kartoshkasi",
+    image: "https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=600&q=80"
+  },
+  // 6. Pizza
+  {
+    id: 'f6',
+    name: 'Pizza',
+    category: 'food',
+    badge: 'TAOM',
+    price: 45000,
+    icon: 'pizza',
+    inStock: true,
+    description: "Mozzarella pishlog‘i va pepperoni kolbasali pizza",
+    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80"
+  },
+  // 7. Fanta 0.5L
+  {
+    id: 'd1',
+    name: 'Fanta 0.5L',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 8000,
+    icon: 'fanta',
+    inStock: true,
+    description: "Muzdek apelsinli tetiklantiruvchi ichimlik",
+    image: "https://images.unsplash.com/photo-1624517452488-04869289c4ca?auto=format&fit=crop&w=600&q=80"
+  },
+  // 8. Fanta 2L
+  {
+    id: 'd2',
+    name: 'Fanta 2L',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 15000,
+    icon: 'fanta',
+    inStock: true,
+    description: "Katta dastuxonlar uchun 2 litrli gazli ichimlik",
+    image: "https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?auto=format&fit=crop&w=600&q=80"
+  },
+  // 9. Coca-Cola 1L
+  {
+    id: 'd3',
+    name: 'Coca-Cola 1L',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 12000,
+    icon: 'cola',
+    inStock: true,
+    description: "Klassik ta’mga ega tetiklantiruvchi ichimlik",
+    image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=600&q=80"
+  },
+  // 10. Suv (0.5L)
+  {
+    id: 'd4',
+    name: 'Suv (0.5L)',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 5000,
+    icon: 'water',
+    inStock: true,
+    description: "Toza tabiiy gazsiz tog‘ suvi",
+    image: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80"
+  },
 
-  // DRINKS (Ichimliklar)
-  { id: 'd1', name: 'Fanta 0.5L', category: 'drinks', price: 8000, icon: 'fanta', inStock: true, description: "Muzdek apelsinli tetiklantiruvchi ichimlik" },
-  { id: 'd2', name: 'Fanta 2L', category: 'drinks', price: 20000, icon: 'fanta', inStock: true, description: "Katta dasturxonlar uchun 2 litrli gazli ichimlik" },
-  { id: 'd3', name: 'Coca-Cola 1L', category: 'drinks', price: 12000, icon: 'cola', inStock: true, description: "Klassik ta'mga ega tetiklantiruvchi ichimlik" },
-  { id: 'd4', name: 'Suv (0.5L)', category: 'drinks', price: 5000, icon: 'water', inStock: true, description: "Toza tabiiy gazsiz tog' suvi" },
-  { id: 'd5', name: 'Sharbat (Sok)', category: 'drinks', price: 12000, icon: 'juice', inStock: true, description: "100% tabiiy mevali sharbat" },
-
-  // COFFEE & DESSERT (Qahva va Shirinliklar)
-  { id: 'c1', name: "Limonli ko'k choy", category: 'coffee', price: 7000, icon: 'tea', inStock: true, description: "Yalpiz va limonli xushbo'y shifobaxsh choy" },
-  { id: 'c2', name: 'Kofe Americano', category: 'coffee', price: 14000, icon: 'coffee', inStock: true, description: "Yangi yanchilgan donali achchiq qora kofe" },
-  { id: 'c3', name: 'Kapuchino', category: 'coffee', price: 18000, icon: 'coffee', inStock: true, description: "Qalin sut ko'pikli va dolchinli kapuchino" },
-  { id: 'c4', name: 'Chizkeyk', category: 'coffee', price: 24000, icon: 'cake', inStock: true, description: "Klassik Nyu-York chizkeyki mevali qaymoq bilan" }
+  // Qahva va qo'shimcha
+  {
+    id: 'c1',
+    name: "Limonli choy",
+    category: 'coffee',
+    badge: 'ICHIMLIK',
+    price: 7000,
+    icon: 'tea',
+    inStock: true,
+    description: "Yalpiz va limonli xushbo‘y shifobaxsh choy",
+    image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'c2',
+    name: 'Kofe Americano',
+    category: 'coffee',
+    badge: 'ICHIMLIK',
+    price: 14000,
+    icon: 'coffee',
+    inStock: true,
+    description: "Yangi yanchilgan donali achchiq qora kofe",
+    image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'c3',
+    name: 'Kapuchino',
+    category: 'coffee',
+    badge: 'ICHIMLIK',
+    price: 18000,
+    icon: 'coffee',
+    inStock: true,
+    description: "Qalin sut ko‘pikli va dolchinli kapuchino",
+    image: "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'c4',
+    name: 'Cheesecake',
+    category: 'coffee',
+    badge: 'DESERT',
+    price: 24000,
+    icon: 'cake',
+    inStock: true,
+    description: "Klassik Nyu-York chizkeyki mevali qaymoq bilan",
+    image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=600&q=80"
+  }
 ];
 
 // Initial 10 Tables (Exact state matching Dashboard preview)

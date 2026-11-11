@@ -741,57 +741,18 @@ const MenuView = ({ products, onSelectProduct, tables }) => {
         ))}
       </div>
 
-      {/* Product Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+      {/* Product Cards Grid Matching Screenshot */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4.5">
         {filteredProducts.map(product => {
           const isOutOfStock = product.inStock === false;
 
           return (
-            <div
+            <ProductCard
               key={product.id}
-              className={`bg-white rounded-3xl p-4 border border-stone-200 shadow-card hover:shadow-card-hover transition-all duration-300 flex flex-col justify-between group ${
-                isOutOfStock ? 'opacity-50' : ''
-              }`}
-            >
-              <div>
-                {/* SVG Visual */}
-                <div className="w-full h-32 bg-stone-50 rounded-2xl flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
-                  <FoodIcon name={product.icon} className="w-20 h-20" />
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
-                      {product.category === 'food' ? 'Taom' : product.category === 'drinks' ? 'Ichimlik' : 'Desert'}
-                    </span>
-                    {isOutOfStock && (
-                      <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Mavjud emas</span>
-                    )}
-                  </div>
-                  <h4 className="font-extrabold text-stone-900 text-sm mt-1">{product.name}</h4>
-                  <p className="text-[11px] text-stone-400 line-clamp-2 leading-relaxed">
-                    {product.description || "Mazali ta'm va yangi ingredientlar"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-3 mt-3 border-t border-stone-100 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-stone-400 block">Narxi</span>
-                  <span className="font-mono font-extrabold text-sm text-cafe-900 text-amber-800">
-                    {formatUZS(product.price)}
-                  </span>
-                </div>
-                <button
-                  disabled={isOutOfStock}
-                  onClick={() => onSelectProduct(product)}
-                  className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-cafe-950 font-bold text-xs flex items-center gap-1 shadow-sm transition"
-                >
-                  <Icon name="plus" className="w-3.5 h-3.5" />
-                  <span>Qo‘shish</span>
-                </button>
-              </div>
-            </div>
+              product={product}
+              disabled={isOutOfStock}
+              onSelect={onSelectProduct}
+            />
           );
         })}
       </div>

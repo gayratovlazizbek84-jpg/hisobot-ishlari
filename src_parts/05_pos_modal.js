@@ -191,38 +191,57 @@ const POSDrawer = ({
                     <div
                       key={product.id}
                       onClick={() => !isOutOfStock && onAddItem(table.id, product)}
-                      className={`relative bg-white rounded-2xl p-3.5 border transition-all duration-200 flex flex-col justify-between select-none ${
+                      className={`relative bg-white rounded-2xl p-3 border transition-all duration-200 flex flex-col justify-between select-none ${
                         isOutOfStock
                           ? 'opacity-50 cursor-not-allowed border-stone-200 bg-stone-50'
                           : inCartItem
                           ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md cursor-pointer hover:shadow-lg'
-                          : 'border-stone-200 hover:border-amber-400 shadow-sm hover:shadow-md cursor-pointer group'
+                          : 'border-stone-200 hover:border-amber-400 shadow-xs hover:shadow-md cursor-pointer group'
                       }`}
                     >
                       {/* Quantity in cart badge */}
                       {inCartItem && (
-                        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-amber-500 text-white font-extrabold text-[11px] shadow-sm animate-scale-up">
+                        <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-amber-500 text-stone-950 font-black text-[11px] shadow-sm animate-scale-up">
                           {inCartItem.quantity}x
                         </div>
                       )}
 
-                      <div className="flex flex-col items-center text-center my-1">
-                        <div className="w-14 h-14 mb-2 flex items-center justify-center transform group-hover:scale-110 transition duration-300">
-                          <FoodIcon name={product.icon} className="w-14 h-14" />
+                      <div>
+                        {/* Food Image */}
+                        <div className="w-full h-24 rounded-xl bg-[#FAF8F5] mb-2 flex items-center justify-center p-1 overflow-hidden group-hover:scale-105 transition duration-300">
+                          {product.image ? (
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="max-h-full max-w-full object-contain drop-shadow-xs"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-full h-full items-center justify-center ${product.image ? 'hidden' : 'flex'}`}>
+                            <FoodIcon name={product.icon} className="w-12 h-12" />
+                          </div>
                         </div>
-                        <h4 className="font-bold text-stone-900 text-sm line-clamp-1">{product.name}</h4>
-                        <span className="text-[11px] text-stone-400 capitalize">{product.category === 'food' ? 'Taom' : product.category === 'drinks' ? 'Ichimlik' : 'Desert'}</span>
+
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-amber-100/70 text-amber-800">
+                          {product.badge || (product.category === 'drinks' ? 'ICHIMLIK' : 'TAOM')}
+                        </span>
+                        <h4 className="font-extrabold text-stone-900 text-xs mt-1 line-clamp-1">{product.name}</h4>
+                        <p className="text-[10px] text-stone-400 line-clamp-1 mt-0.5">{product.description}</p>
                       </div>
 
                       <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between">
-                        <span className="font-mono font-bold text-xs text-cafe-800">
+                        <span className="font-black text-xs text-stone-900 font-mono">
                           {formatUZS(product.price)}
                         </span>
                         <button
                           disabled={isOutOfStock}
-                          className="w-7 h-7 rounded-xl bg-amber-50 hover:bg-amber-500 text-amber-700 hover:text-white flex items-center justify-center transition shadow-sm"
+                          className="px-2 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-[10px] flex items-center gap-1 transition shadow-xs"
                         >
-                          <Icon name="plus" className="w-4 h-4" />
+                          <Icon name="cart" className="w-3 h-3" />
+                          <span>Qo‘shish</span>
                         </button>
                       </div>
                     </div>
