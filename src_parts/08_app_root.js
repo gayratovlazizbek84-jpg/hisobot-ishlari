@@ -790,6 +790,14 @@ const App = () => {
                 onOpenReceipt={(order) => setReceiptOrder(order)}
                 onNavigateTab={(tab) => setActiveTab(tab)}
                 onOpenCustomerBill={(table) => setCustomerBillTable(table)}
+                onLoginSuccess={(user) => {
+                  if (user) setCurrentUser(user);
+                  addToast('success', `Xush kelibsiz, ${user?.name || 'Alisher'}!`, 'Tizimga muvaffaqiyatli kirdingiz');
+                }}
+                onRegisterSuccess={(user) => {
+                  if (user) setCurrentUser(user);
+                  addToast('success', `Tabriklaymiz, ${user?.name || 'Alisher'}!`, 'Yangi hisobingiz yaratildi');
+                }}
               />
             )}
 
