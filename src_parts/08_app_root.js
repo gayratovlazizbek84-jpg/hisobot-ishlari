@@ -105,6 +105,92 @@ const App = () => {
     });
   };
 
+  // Notifications State & Dropdown
+  const [notificationMenuOpen, setNotificationMenuOpen] = React.useState(false);
+  const [notifications, setNotifications] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_NOTIFICATIONS');
+      if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return [
+      {
+        id: 'notif_1',
+        type: 'payment',
+        title: "Stol 1 to‘lov kutilmoqda",
+        message: "Stol 1 mijozlari hisob-kitob qilishni so‘radi. Jami hisob: 120 000 so‘m.",
+        tableId: 1,
+        time: "3 daqiqa oldin",
+        timestamp: Date.now() - 3 * 60 * 1000,
+        isRead: false
+      },
+      {
+        id: 'notif_2',
+        type: 'order',
+        title: "Stol 7 yangi buyurtma",
+        message: "3 ta taom buyurtmasi kiritildi (Hamburger, Lavash, Fanta). Oshxonaga jo‘natildi.",
+        tableId: 7,
+        time: "8 daqiqa oldin",
+        timestamp: Date.now() - 8 * 60 * 1000,
+        isRead: false
+      },
+      {
+        id: 'notif_3',
+        type: 'system',
+        title: "Kassa tushumi yangilandi",
+        message: "Bugungi tushum rejadagidan yuqori: +12% o‘sish qayd etildi.",
+        time: "15 daqiqa oldin",
+        timestamp: Date.now() - 15 * 60 * 1000,
+        isRead: true
+      },
+      {
+        id: 'notif_4',
+        type: 'ready',
+        title: "Buyurtma tayyor (Bar)",
+        message: "Stol 10 uchun 2 dona qahva va shirinliklar tayyorlandi.",
+        tableId: 10,
+        time: "25 daqiqa oldin",
+        timestamp: Date.now() - 25 * 60 * 1000,
+        isRead: true
+      }
+    ];
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('RAYHON_CAFE_NOTIFICATIONS', JSON.stringify(notifications));
+    } catch(e) {}
+  }, [notifications]);
+
+  const handleMarkAllNotificationsRead = () => {
+    setNotifications(prev => (prev || []).map(n => ({ ...n, isRead: true })));
+    if (soundEnabled) playSound('click');
+    addToast('success', "Barcha xabarlar o‘qildi deb belgilandi");
+  };
+
+  const handleClearNotifications = () => {
+    setNotifications([]);
+    if (soundEnabled) playSound('delete');
+    addToast('info', "Barcha xabarnomalar tozalandi");
+  };
+
+  const handleNotificationClick = (item) => {
+    setNotifications(prev => (prev || []).map(n => n.id === item.id ? { ...n, isRead: true } : n));
+    setNotificationMenuOpen(false);
+
+    if (item.tableId) {
+      const table = tables.find(t => t.id === item.tableId);
+      if (table) {
+        if (item.type === 'payment' && (table.status === 'occupied' || table.status === 'payment_pending')) {
+          handleProceedToPayment(table);
+        } else {
+          handleSelectTable(table.id);
+        }
+      }
+    } else {
+      addToast('info', item.title, item.message);
+    }
+  };
+
   // Global Header Search
   const [headerSearch, setHeaderSearch] = React.useState('');
 
@@ -215,6 +301,19 @@ const App = () => {
 
     if (soundEnabled) playSound('add');
     addToast('success', `${product.name} qo‘shildi`, `Stol ${tableId} buyurtmasiga kiritildi`);
+
+    // Add Live Notification
+    const notifItem = {
+      id: 'notif_' + Date.now() + Math.random().toString(36).substr(2, 4),
+      type: 'order',
+      title: `Stol ${tableId} yangi taom qo‘shildi`,
+      message: `${product.name} buyurtmaga kiritildi (${formatUZS(product.price)}).`,
+      tableId: tableId,
+      time: 'Hozirgina',
+      timestamp: Date.now(),
+      isRead: false
+    };
+    setNotifications(prev => [notifItem, ...(prev || []).slice(0, 19)]);
   };
 
   const handleUpdateQuantity = (tableId, itemId, newQuantity) => {
@@ -371,6 +470,19 @@ const App = () => {
     if (soundEnabled) playSound('cash');
     addToast('success', "To‘lov muvaffaqiyatli qabul qilindi!", `${table.name} bo‘shatildi`);
 
+    // Add Live Notification
+    const payNotif = {
+      id: 'notif_' + Date.now() + Math.random().toString(36).substr(2, 4),
+      type: 'payment',
+      title: `${table.name} to‘lovi yakunlandi`,
+      message: `${formatUZS(grandTotal)} qabul qilindi (${paymentMethod === 'cash' ? 'Naqd' : 'Karta'}). Chek #${orderRecord.id}`,
+      tableId: table.id,
+      time: 'Hozirgina',
+      timestamp: Date.now(),
+      isRead: false
+    };
+    setNotifications(prev => [payNotif, ...(prev || []).slice(0, 19)]);
+
     // Show thermal receipt modal
     setReceiptOrder(orderRecord);
   };
@@ -519,11 +631,11 @@ const App = () => {
 
         {/* Brand Header */}
         <div className="p-5 pb-3 border-b border-[#2A1C13] flex flex-col items-center text-center relative z-10">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 text-stone-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20 mb-2">
-            <Icon name="coffee-cup" className="w-7 h-7" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/40 p-0.5 bg-[#140C07] mb-2 hover:scale-105 transition cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+            <AppLogo size="w-full h-full" className="rounded-xl" />
           </div>
-          <h1 className="font-black text-lg tracking-wide text-white">{settings.cafeName}</h1>
-          <p className="text-[11px] text-amber-400/80 font-medium">Boshqaruv tizimi</p>
+          <h1 className="font-black text-lg tracking-wide text-white leading-tight">{settings.cafeName}</h1>
+          <p className="text-[11px] text-amber-400 font-bold tracking-wide">Cafe & Lounge · Boshqaruv</p>
 
           {/* Date & Time pill container */}
           <div className="w-full mt-3 px-3 py-1.5 rounded-xl bg-[#281A12] border border-amber-900/30 flex items-center justify-center gap-3 text-[11px] font-mono text-stone-300">
@@ -616,10 +728,13 @@ const App = () => {
           <div className="relative w-72 bg-[#1B120C] text-white flex flex-col h-full shadow-2xl z-10">
             <div className="p-5 border-b border-[#2A1C13] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center font-black">
-                  <Icon name="coffee-cup" className="w-5 h-5" />
+                <div className="w-11 h-11 rounded-xl overflow-hidden border border-amber-500/40 shadow-xs p-0.5 bg-[#140C07] shrink-0">
+                  <AppLogo size="w-full h-full" className="rounded-lg" />
                 </div>
-                <h3 className="font-bold text-sm text-white">{settings.cafeName}</h3>
+                <div>
+                  <h3 className="font-bold text-sm text-white leading-tight">{settings.cafeName}</h3>
+                  <p className="text-[10px] text-amber-400 font-bold">Cafe & Lounge</p>
+                </div>
               </div>
               <button onClick={() => setMobileMenuOpen(false)} className="text-stone-400 hover:text-white">
                 <Icon name="close" className="w-5 h-5" />
@@ -793,20 +908,39 @@ const App = () => {
               )}
             </button>
 
-            {/* Notification Bell with Badge 2 */}
-            <button
-              onClick={() => {
-                if (soundEnabled) playSound('click');
-                addToast('info', 'Xabarnomalar', '2 ta yangi buyurtma va to‘lov kutilmoqda');
-              }}
-              className="relative w-9 h-9 rounded-full bg-[#EFE9DF] hover:bg-[#E5DDD2] border border-stone-300/40 text-stone-700 flex items-center justify-center transition shadow-2xs"
-              title="Xabarnomalar"
-            >
-              <Icon name="bell" className="w-4 h-4 text-stone-800" />
-              <span className="absolute -top-1 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center shadow-xs">
-                2
-              </span>
-            </button>
+            {/* Notification Bell with Badge & Interactive Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (soundEnabled) playSound('click');
+                  setNotificationMenuOpen(prev => !prev);
+                }}
+                className={`relative w-9 h-9 rounded-full border transition shadow-2xs flex items-center justify-center ${
+                  notificationMenuOpen 
+                    ? 'bg-amber-500 text-stone-950 border-amber-600 scale-105 shadow-md shadow-amber-500/20' 
+                    : 'bg-[#EFE9DF] hover:bg-[#E5DDD2] border-stone-300/40 text-stone-700'
+                }`}
+                title="Xabarnomalar"
+              >
+                <Icon name="bell" className="w-4 h-4 text-stone-800" />
+                {(notifications || []).filter(n => !n.isRead).length > 0 && (
+                  <span className="absolute -top-1 -right-0.5 min-w-[17px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center shadow-xs animate-pulse">
+                    {(notifications || []).filter(n => !n.isRead).length}
+                  </span>
+                )}
+              </button>
+
+              {/* Interactive Notifications Dropdown */}
+              {notificationMenuOpen && (
+                <NotificationsDropdown
+                  notifications={notifications}
+                  onClose={() => setNotificationMenuOpen(false)}
+                  onMarkAllRead={handleMarkAllNotificationsRead}
+                  onClearAll={handleClearNotifications}
+                  onNotificationClick={handleNotificationClick}
+                />
+              )}
+            </div>
 
             {/* Cashier Profile Avatar with online status */}
             <div 

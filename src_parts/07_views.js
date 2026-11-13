@@ -35,8 +35,8 @@ const DashboardView = ({
 
           <div className="relative z-10 max-w-md">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold mb-2 shadow-xs">
-              <Icon name="star" className="w-3.5 h-3.5 text-amber-400" />
-              <span>Rayhon Cafe</span>
+              <AppLogo size="w-4 h-4" className="rounded-xs" />
+              <span>Rayhon Cafe & Lounge</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
               Yaxshi kayfiyat,<br />mazali taom!
@@ -47,20 +47,10 @@ const DashboardView = ({
             </p>
           </div>
 
-          {/* Latte Art Cup with Saucer and Roasted Beans (Exact matching illustration) */}
+          {/* Official Emblem Logo (Right side of Hero Card) */}
           <div className="hidden sm:flex items-center justify-center shrink-0 relative z-10 pr-2">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-[#3D2516] to-[#1E110A] p-2 shadow-2xl border-2 border-amber-500/30 flex items-center justify-center relative">
-              <div className="w-full h-full rounded-full bg-[#180E08] border border-amber-900/60 p-2 flex items-center justify-center">
-                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#4F301D] to-[#2B180E] flex items-center justify-center relative shadow-inner">
-                  <div className="w-11 h-11 rounded-full bg-[#D4A373] flex items-center justify-center shadow-inner">
-                    <svg viewBox="0 0 24 24" className="w-7 h-7 text-white drop-shadow" fill="currentColor">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <span className="absolute -top-2 left-1/3 w-1.5 h-3 bg-white/25 rounded-full animate-pulse"></span>
-              <span className="absolute -top-3 right-1/3 w-1.5 h-4 bg-white/30 rounded-full animate-pulse delay-100"></span>
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-500/40 p-1 bg-[#1A1009] flex items-center justify-center group hover:scale-105 transition">
+              <AppLogo size="w-full h-full" className="rounded-2xl" />
             </div>
           </div>
         </div>

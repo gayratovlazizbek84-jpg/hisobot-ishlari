@@ -46,6 +46,232 @@ const ToastContainer = ({ toasts, onDismiss }) => {
   );
 };
 
+// App Brand Logo Component (Rayhon Cafe & Lounge Official Logo)
+const AppLogo = ({ size = "w-12 h-12", className = "", alt = "Rayhon Cafe" }) => {
+  const logoSrc = typeof APP_LOGO !== 'undefined' ? APP_LOGO : 'logo.png';
+  return (
+    <img
+      src={logoSrc}
+      alt={alt}
+      className={`${size} object-cover shrink-0 rounded-2xl ${className}`}
+    />
+  );
+};
+
+// Rich Interactive Notifications Dropdown
+const NotificationsDropdown = ({
+  notifications = [],
+  onClose,
+  onMarkAllRead,
+  onClearAll,
+  onNotificationClick
+}) => {
+  const [activeFilter, setActiveFilter] = React.useState('all'); // 'all', 'unread', 'payments'
+
+  const filtered = (notifications || []).filter(n => {
+    if (activeFilter === 'unread') return !n.isRead;
+    if (activeFilter === 'payments') return n.type === 'payment';
+    return true;
+  });
+
+  const unreadCount = (notifications || []).filter(n => !n.isRead).length;
+
+  return (
+    <>
+      {/* Invisible backdrop to catch outside clicks */}
+      <div 
+        className="fixed inset-0 z-40" 
+        onClick={onClose} 
+      />
+
+      <div className="absolute right-0 top-full mt-2.5 w-80 sm:w-96 bg-white dark:bg-[#1C120B] rounded-3xl shadow-2xl border border-stone-200/90 dark:border-stone-800 z-50 overflow-hidden animate-scale-up text-stone-900 dark:text-stone-100">
+        
+        {/* Header */}
+        <div className="p-4 pb-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center">
+              <Icon name="bell" className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h4 className="font-black text-sm text-stone-900 dark:text-white leading-tight">Xabarnomalar</h4>
+                {unreadCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black leading-none">
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-stone-400 font-medium">Kassa va buyurtmalar yangiliklari</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <button
+                onClick={onMarkAllRead}
+                className="px-2 py-1 rounded-lg text-[10px] font-extrabold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition flex items-center gap-1"
+                title="Barchasini o‘qilgan deb belgilash"
+              >
+                <Icon name="check-check" className="w-3.5 h-3.5" />
+                <span>O‘qildi</span>
+              </button>
+            )}
+            {notifications.length > 0 && (
+              <button
+                onClick={onClearAll}
+                className="p-1.5 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+                title="Barchasini tozalash"
+              >
+                <Icon name="trash" className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition"
+              title="Yopish"
+            >
+              <Icon name="close" className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Filter Pills */}
+        <div className="px-4 py-2 border-b border-stone-100 dark:border-stone-800 flex items-center gap-1.5 bg-stone-50/60 dark:bg-[#160E08]">
+          <button
+            onClick={() => setActiveFilter('all')}
+            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition ${
+              activeFilter === 'all'
+                ? 'bg-amber-500 text-stone-950 font-black shadow-2xs'
+                : 'text-stone-600 dark:text-stone-400 hover:bg-stone-200/50 dark:hover:bg-stone-800'
+            }`}
+          >
+            Barchasi ({notifications.length})
+          </button>
+          <button
+            onClick={() => setActiveFilter('unread')}
+            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition flex items-center gap-1 ${
+              activeFilter === 'unread'
+                ? 'bg-amber-500 text-stone-950 font-black shadow-2xs'
+                : 'text-stone-600 dark:text-stone-400 hover:bg-stone-200/50 dark:hover:bg-stone-800'
+            }`}
+          >
+            <span>O‘qilmagan</span>
+            {unreadCount > 0 && (
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveFilter('payments')}
+            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition ${
+              activeFilter === 'payments'
+                ? 'bg-amber-500 text-stone-950 font-black shadow-2xs'
+                : 'text-stone-600 dark:text-stone-400 hover:bg-stone-200/50 dark:hover:bg-stone-800'
+            }`}
+          >
+            To‘lovlar
+          </button>
+        </div>
+
+        {/* List of Notifications */}
+        <div className="max-h-80 overflow-y-auto divide-y divide-stone-100 dark:divide-stone-800/80">
+          {filtered.length === 0 ? (
+            <div className="p-8 text-center flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center mb-2">
+                <Icon name="bell" className="w-6 h-6 opacity-60" />
+              </div>
+              <h5 className="font-extrabold text-xs text-stone-800 dark:text-stone-200">Yangi xabarnomalar yo‘q</h5>
+              <p className="text-[11px] text-stone-400 mt-0.5">Barcha buyurtmalar va to‘lovlar nazoratda ☕</p>
+            </div>
+          ) : (
+            filtered.map((item) => {
+              let typeIcon = 'bell';
+              let badgeColor = 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300';
+
+              if (item.type === 'payment') {
+                typeIcon = 'cash';
+                badgeColor = 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300';
+              } else if (item.type === 'order') {
+                typeIcon = 'chair';
+                badgeColor = 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300';
+              } else if (item.type === 'ready') {
+                typeIcon = 'coffee-cup';
+                badgeColor = 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300';
+              } else if (item.type === 'system') {
+                typeIcon = 'crown';
+                badgeColor = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300';
+              }
+
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => onNotificationClick && onNotificationClick(item)}
+                  className={`p-3.5 flex items-start gap-3 cursor-pointer transition ${
+                    item.isRead 
+                      ? 'bg-transparent hover:bg-stone-50 dark:hover:bg-stone-800/40 opacity-75 hover:opacity-100' 
+                      : 'bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-50 dark:hover:bg-amber-950/40 font-semibold'
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 ${badgeColor}`}>
+                    <Icon name={typeIcon} className="w-4 h-4" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                      <h5 className="text-xs font-black text-stone-900 dark:text-white truncate">
+                        {item.title}
+                      </h5>
+                      <span className="text-[10px] text-stone-400 font-mono whitespace-nowrap shrink-0">
+                        {item.time || 'Hozirgina'}
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-stone-600 dark:text-stone-300 leading-snug line-clamp-2">
+                      {item.message}
+                    </p>
+
+                    <div className="flex items-center justify-between mt-2 pt-1 border-t border-stone-100/60 dark:border-stone-800/40">
+                      {item.tableId ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-100/80 dark:bg-amber-950/60 px-2 py-0.5 rounded-lg hover:bg-amber-200 transition">
+                          <span>Stol {item.tableId}</span>
+                          <span>→</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-stone-400">Rayhon Terminal</span>
+                      )}
+
+                      {!item.isRead ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                          <span>Yangi</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-stone-400 flex items-center gap-0.5">
+                          <Icon name="check" className="w-3 h-3 text-stone-400" />
+                          <span>Ko‘rilgan</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-2.5 px-4 bg-stone-50 dark:bg-[#140C07] border-t border-stone-100 dark:border-stone-800 text-center text-[10px] text-stone-400 flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot"></span>
+            <span>Real vaqt rejimida nazorat</span>
+          </span>
+          <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">Rayhon Cafe POS</span>
+        </div>
+
+      </div>
+    </>
+  );
+};
+
 // Confirmation Modal
 const ConfirmModal = ({ isOpen, title, message, confirmText = "Ha, tasdiqlayman", cancelText = "Bekor qilish", isDestructive = false, onConfirm, onCancel }) => {
   if (!isOpen) return null;
@@ -319,11 +545,11 @@ const LoginCard = ({ onLoginSuccess, onGoToRegister }) => {
 
         {/* Brand header */}
         <div className="relative z-10 text-center flex flex-col items-center">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-300 text-stone-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/30 mb-2 p-2">
-            <Icon name="coffee-cup" className="w-6 h-6" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/50 mb-2 p-0.5 bg-[#140C07] group-hover:scale-105 transition">
+            <AppLogo size="w-full h-full" className="rounded-xl" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-wide text-white">Rayhon Cafe</h1>
-          <p className="text-amber-400/90 text-xs font-semibold mt-1">Har doim siz bilan!</p>
+          <p className="text-amber-400/90 text-xs font-semibold mt-1">Cafe & Lounge · Har doim siz bilan!</p>
         </div>
 
         {/* Center Latte Art Cup on Saucer with Beans illustration */}
@@ -543,11 +769,11 @@ const RegisterCard = ({ onRegisterSuccess, onGoToLogin }) => {
         <div className="absolute inset-0 bg-gradient-to-b from-[#1C120B]/95 via-[#23150C]/90 to-[#120A05]/95 pointer-events-none"></div>
 
         <div className="relative z-10 text-center flex flex-col items-center">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-300 text-stone-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/30 mb-2 p-2">
-            <Icon name="coffee-cup" className="w-6 h-6" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/50 mb-2 p-0.5 bg-[#140C07] group-hover:scale-105 transition">
+            <AppLogo size="w-full h-full" className="rounded-xl" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-wide text-white">Rayhon Cafe</h1>
-          <p className="text-amber-400/90 text-xs font-semibold mt-1">Yangi hisob oching</p>
+          <p className="text-amber-400/90 text-xs font-semibold mt-1">Cafe & Lounge · Yangi hisob oching</p>
         </div>
 
         <div className="relative z-10 my-4 flex items-center justify-center">
