@@ -12,7 +12,8 @@ const POSDrawer = ({
   onClearTable, 
   onTransferTable,
   tablesList,
-  serviceFeePercent = 0
+  serviceFeePercent = 0,
+  onOpenCustomerBill
 }) => {
   const [selectedCategory, setSelectedCategory] = React.useState('all');
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -73,8 +74,8 @@ const POSDrawer = ({
               className="bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-xl px-3 py-2 text-xs font-semibold text-stone-800 outline-none cursor-pointer transition"
             >
               <option value="available">Holat: Bo‘sh</option>
-              <option value="occupied">Holat: Band</option>
-              <option value="payment_pending">Holat: To‘lov kutilmoqda</option>
+              <option value="occupied">Holat: Band (Ovqatlanmoqda)</option>
+              <option value="payment_pending">Holat: Shot so‘ralgan (To‘lov kutilmoqda)</option>
             </select>
 
             {/* Transfer table toggle */}
@@ -345,9 +346,22 @@ const POSDrawer = ({
               )}
             </div>
 
-            {/* Calculations & Checkout Bar */}
+            {/* Calculations & Dining Workflow Bar */}
             <div className="p-4 bg-stone-50 border-t border-stone-200">
-              <div className="space-y-1.5 mb-4 text-xs">
+              
+              {/* Dining Notice: No advance payment, pay after meal */}
+              <div className="mb-3 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-400/40 flex items-start gap-2.5 text-xs text-amber-950">
+                <span className="text-base shrink-0 mt-0.5">🍽️</span>
+                <div>
+                  <span className="font-extrabold text-stone-900 block leading-tight">Oldindan to‘lov talab etilmaydi!</span>
+                  <span className="text-stone-600 text-[11px] block mt-0.5">
+                    Mijozlar buyurtma qilib ovqatlanadi. To‘lov mijoz ovqatlanib bo‘lgach, shot so‘raganda hisoblab olinadi.
+                  </span>
+                </div>
+              </div>
+
+              {/* Price summary */}
+              <div className="space-y-1.5 mb-3.5 text-xs">
                 <div className="flex justify-between text-stone-500 font-medium">
                   <span>Oraliq summa:</span>
                   <span className="font-mono font-semibold text-stone-800">{formatUZS(subtotal)}</span>
@@ -359,32 +373,69 @@ const POSDrawer = ({
                   </div>
                 )}
                 <div className="pt-2 border-t border-stone-200 flex justify-between items-baseline">
-                  <span className="text-base font-extrabold text-stone-900">Jami to‘lov:</span>
-                  <span className="text-xl font-extrabold text-cafe-900 font-mono text-amber-700">
+                  <div>
+                    <span className="text-sm font-black text-stone-900 block">Jami hisob:</span>
+                    <span className="text-[10px] text-amber-800 font-semibold">(Mijoz shot so‘raganda aytiladi)</span>
+                  </div>
+                  <span className="text-xl font-black text-amber-700 font-mono">
                     {formatUZS(grandTotal)}
                   </span>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Action Buttons in Dining Workflow:
+                  1. Buyurtmani stolga yozish (Ovqatlanmoqda)
+                  2. Shotni hisoblash va Mijozga aytish
+                  3. To'lovni qabul qilish (Yopish)
+              */}
+              <div className="space-y-2">
+                {/* Primary Button 1: Save & confirm to table (No advance payment) */}
                 <button
                   disabled={!table.order || table.order.length === 0}
-                  onClick={() => onChangeStatus(table.id, 'payment_pending')}
-                  className="py-3 px-3 rounded-2xl border border-stone-300 hover:bg-stone-200/70 text-stone-700 text-xs font-bold transition disabled:opacity-40"
+                  onClick={() => {
+                    if (table.order && table.order.length > 0) {
+                      onChangeStatus(table.id, 'occupied');
+                    }
+                    if (typeof playSound === 'function') playSound('add');
+                    onClose();
+                  }}
+                  className="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition disabled:opacity-40"
+                  title="Taomlarni stolga yozish — mijozlar ovqatlanishni boshlaydi"
                 >
-                  To‘lov kutilmoqda
+                  <Icon name="check" className="w-4 h-4" />
+                  <span>Buyurtmani stolga yozish (Ovqatlanmoqda)</span>
                 </button>
 
-                <button
-                  disabled={!table.order || table.order.length === 0}
-                  onClick={() => onProceedToPayment(table)}
-                  className="py-3 px-4 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-sm shadow-lg shadow-amber-600/30 flex items-center justify-center gap-2 transition disabled:opacity-40"
-                >
-                  <Icon name="cash" className="w-4 h-4" />
-                  <span>To‘lovga o‘tish</span>
-                </button>
+                {/* Secondary Row: Calculate & Tell Customer vs Accept Payment */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Button 2: Calculate bill and tell customer */}
+                  <button
+                    disabled={!table.order || table.order.length === 0}
+                    onClick={() => {
+                      if (onOpenCustomerBill) {
+                        onOpenCustomerBill(table);
+                      }
+                    }}
+                    className="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs shadow-sm flex items-center justify-center gap-1.5 transition disabled:opacity-40"
+                    title="Mijoz ovqatlanib bo‘lgach, shot so‘raganda hisoblab aytib berish"
+                  >
+                    <Icon name="speech" className="w-4 h-4 text-stone-950" />
+                    <span>Shotni aytish</span>
+                  </button>
+
+                  {/* Button 3: Accept Payment (final closing) */}
+                  <button
+                    disabled={!table.order || table.order.length === 0}
+                    onClick={() => onProceedToPayment(table)}
+                    className="py-2.5 px-3 rounded-2xl bg-stone-900 hover:bg-black text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition disabled:opacity-40"
+                    title="Mijoz pulni to‘laganida stolni yopish va chek chiqarish"
+                  >
+                    <Icon name="cash" className="w-4 h-4" />
+                    <span>To‘lovni qabul qilish</span>
+                  </button>
+                </div>
               </div>
+
             </div>
 
           </div>

@@ -314,10 +314,11 @@ const DashboardView = ({
                               e.stopPropagation();
                               onOpenCustomerBill(table);
                             }}
-                            className="p-1 rounded text-amber-700 hover:bg-amber-100 transition"
-                            title="Mijoz nima yeganini hisoblash va aytish"
+                            className="px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500 hover:text-stone-950 text-amber-900 border border-amber-400/40 font-black flex items-center gap-1 transition shadow-2xs"
+                            title="Mijoz ovqatlanib bo‘lgach, shotni hisoblab aytish"
                           >
-                            <Icon name="speech" className="w-3 h-3" />
+                            <Icon name="speech" className="w-3 h-3 text-amber-700" />
+                            <span>Shotni aytish</span>
                           </button>
                         </>
                       ) : (

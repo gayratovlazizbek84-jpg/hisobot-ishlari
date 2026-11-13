@@ -1083,6 +1083,10 @@ const App = () => {
         onTransferTable={handleTransferTable}
         tablesList={tables}
         serviceFeePercent={settings.serviceFeePercent || 0}
+        onOpenCustomerBill={(tbl) => {
+          setSelectedTableId(null);
+          setCustomerBillTable(tbl);
+        }}
       />
 
       {/* Payment Checkout Modal */}

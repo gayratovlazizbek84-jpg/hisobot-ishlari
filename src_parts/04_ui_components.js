@@ -327,14 +327,14 @@ const TableStatusBadge = ({ status }) => {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300">
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse-dot"></span>
-          Band
+          Band (Ovqatlanmoqda)
         </span>
       );
     case 'payment_pending':
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
           <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse-dot"></span>
-          To‘lov kutilmoqda
+          Shot so‘ralgan (To‘lov kutilmoqda)
         </span>
       );
     default:
