@@ -406,80 +406,279 @@ const calculateRevenueMetrics = (orderHistory) => {
 const WAITERS_LIST = ["Alisher", "Sardor", "Malika", "Bobur", "Jasur"];
 
 // Initial Sample Products (Matching exact 10 products from screenshot media_1794389708896_9c2eb201.jpg)
+// Initial Sample Products (Fastfud, Salatlar, Desertlar, Ichimliklar, Qahva)
 const DEFAULT_PRODUCTS = [
-  // 1. Hot Dog
+  // --- FASTFUD ---
   {
     id: 'f1',
     name: 'Hot Dog',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 18000,
     icon: 'hotdog',
     inStock: true,
     description: "Xantal va sosiskali klassik issiq hot-dog",
     image: "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=600&q=80"
   },
-  // 2. Hamburger
   {
     id: 'f2',
     name: 'Hamburger',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 25000,
     icon: 'hamburger',
     inStock: true,
     description: "Shirali go‘shtli kotlet va maxsus sousli burger",
     image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80"
   },
-  // 3. Cheeseburger
   {
     id: 'f3',
     name: 'Cheeseburger',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 30000,
     icon: 'cheeseburger',
     inStock: true,
     description: "Eritilgan cheddar pishloqli mazali burger",
     image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=600&q=80"
   },
-  // 4. Lavash
   {
     id: 'f4',
+    name: 'Double Burger',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 38000,
+    icon: 'hamburger',
+    inStock: true,
+    description: "Ikki qavatli shirali mol go‘shti va erigan pishloq",
+    image: "https://images.unsplash.com/photo-1583032015879-661d94b0d01f?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f5',
     name: 'Lavash',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 28000,
     icon: 'lavash',
     inStock: true,
     description: "Grilda qarsildoq pishirilgan tovuqli go‘shtli lavash",
     image: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=600&q=80"
   },
-  // 5. French Fries
   {
-    id: 'f5',
+    id: 'f6',
+    name: 'Pishloqli Lavash',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 32000,
+    icon: 'lavash',
+    inStock: true,
+    description: "Ko‘p pishloqli va sousli to‘yimli lavash",
+    image: "https://images.unsplash.com/photo-1561651823-34feb02250e4?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f7',
     name: 'French Fries',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 15000,
     icon: 'fries',
     inStock: true,
     description: "Oltin rang qarsildoq fri kartoshkasi",
     image: "https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=600&q=80"
   },
-  // 6. Pizza
   {
-    id: 'f6',
-    name: 'Pizza',
-    category: 'food',
-    badge: 'TAOM',
+    id: 'f8',
+    name: 'Pishloqli fri',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 20000,
+    icon: 'fries',
+    inStock: true,
+    description: "Issiq eritilgan pishloq sousli fri kartoshkasi",
+    image: "https://images.unsplash.com/photo-1585109649139-366815a0d713?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f9',
+    name: 'Tovuqli stripslar',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 24000,
+    icon: 'chicken',
+    inStock: true,
+    description: "Qarsildoq panirlangan tovuq bo‘laklari va sous",
+    image: "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f10',
+    name: 'Klab sendvich',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 26000,
+    icon: 'sandwich',
+    inStock: true,
+    description: "Toster non, tovuq go‘shti, pishloq va pomidor",
+    image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f11',
+    name: 'Pepperoni Pizza',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 45000,
     icon: 'pizza',
     inStock: true,
     description: "Mozzarella pishlog‘i va pepperoni kolbasali pizza",
     image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80"
   },
-  // 7. Fanta 0.5L
+  {
+    id: 'f12',
+    name: 'Qo‘ziqorinli Pizza',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 42000,
+    icon: 'pizza',
+    inStock: true,
+    description: "Yangi qo‘ziqorinlar va xushbo‘y o‘tlar bilan",
+    image: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=600&q=80"
+  },
+
+  // --- SALATLAR ---
+  {
+    id: 's1',
+    name: 'Sezar salati',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 32000,
+    icon: 'salad',
+    inStock: true,
+    description: "Grilda pishgan tovuq go‘shti, aysberg, parmesan va sezar sousi",
+    image: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's2',
+    name: 'Yunoncha salat',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 28000,
+    icon: 'salad',
+    inStock: true,
+    description: "Yangi bodring, pomidor, zaytun mevalari va feta pishlog‘i",
+    image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's3',
+    name: 'Smak salati',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 26000,
+    icon: 'salad',
+    inStock: true,
+    description: "Dudlangan go‘sht, qarsildoq suxariki va maxsus sous",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's4',
+    name: 'Bahor salati',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 20000,
+    icon: 'salad',
+    inStock: true,
+    description: "Yangi rediska, bodring, ko‘katlar va smetana",
+    image: "https://images.unsplash.com/photo-1607532941433-304659e8198a?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's5',
+    name: 'Achchiq-chuchuk',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 15000,
+    icon: 'salad',
+    inStock: true,
+    description: "Yozgi shirin pomidor, piyoz va mayin achchiq qalampir",
+    image: "https://images.unsplash.com/photo-1592417817098-8f3d6ef2c6ff?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's6',
+    name: 'Mujskoy kapriz',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 35000,
+    icon: 'salad',
+    inStock: true,
+    description: "Tillar, mol go‘shti, pishloq va yong‘oqli to‘yimli salat",
+    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80"
+  },
+
+  // --- DESERTLAR ---
+  {
+    id: 'ds1',
+    name: 'Nyu-York Cheesecake',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 28000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Nozik qaymoqli klassik amerika chizkeyki",
+    image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds2',
+    name: 'Tiramisu',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 26000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Italyancha maskarpone va qahvali xushbo‘y desert",
+    image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds3',
+    name: 'Shokoladli Fondan',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 25000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Ichida issiq shokolad oquvchi nozik pirojnoe",
+    image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds4',
+    name: 'Medovik torti',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 22000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Tabiiy tog‘ asali va mayin qaymoqli qatlamlar",
+    image: "https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds5',
+    name: 'San-Sebastian',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 30000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Ispancha kuydirilgan qaymoqli chizkeyk",
+    image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds6',
+    name: 'Muzqaymoq assorti',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 18000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Vanil, qulupnay va shokoladli shariklar",
+    image: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=600&q=80"
+  },
+
+  // --- ICHIMLIKLAR ---
   {
     id: 'd1',
     name: 'Fanta 0.5L',
@@ -491,7 +690,6 @@ const DEFAULT_PRODUCTS = [
     description: "Muzdek apelsinli tetiklantiruvchi ichimlik",
     image: "https://images.unsplash.com/photo-1624517452488-04869289c4ca?auto=format&fit=crop&w=600&q=80"
   },
-  // 8. Fanta 2L
   {
     id: 'd2',
     name: 'Fanta 2L',
@@ -500,12 +698,22 @@ const DEFAULT_PRODUCTS = [
     price: 15000,
     icon: 'fanta',
     inStock: true,
-    description: "Katta dastuxonlar uchun 2 litrli gazli ichimlik",
+    description: "Katta dasturxonlar uchun 2 litrli gazli ichimlik",
     image: "https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?auto=format&fit=crop&w=600&q=80"
   },
-  // 9. Coca-Cola 1L
   {
     id: 'd3',
+    name: 'Coca-Cola 0.5L',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 8000,
+    icon: 'cola',
+    inStock: true,
+    description: "Klassik ta’mga ega muzdek gazli kola",
+    image: "https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'd4',
     name: 'Coca-Cola 1L',
     category: 'drinks',
     badge: 'ICHIMLIK',
@@ -515,9 +723,19 @@ const DEFAULT_PRODUCTS = [
     description: "Klassik ta’mga ega tetiklantiruvchi ichimlik",
     image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=600&q=80"
   },
-  // 10. Suv (0.5L)
   {
-    id: 'd4',
+    id: 'd5',
+    name: 'Sprite 0.5L',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 8000,
+    icon: 'drinks',
+    inStock: true,
+    description: "Limon va laym ta’mli muzdek gazli ichimlik",
+    image: "https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'd6',
     name: 'Suv (0.5L)',
     category: 'drinks',
     badge: 'ICHIMLIK',
@@ -527,51 +745,229 @@ const DEFAULT_PRODUCTS = [
     description: "Toza tabiiy gazsiz tog‘ suvi",
     image: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80"
   },
+  {
+    id: 'd7',
+    name: 'Qulupnayli Mojito',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 22000,
+    icon: 'cocktail',
+    inStock: true,
+    description: "Yangi qulupnay, yalpiz va laymli muzdek kokteyl",
+    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'd8',
+    name: 'Apelsin freş',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 25000,
+    icon: 'juice',
+    inStock: true,
+    description: "100% tabiiy yangi siqilgan apelsin sharbati",
+    image: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=600&q=80"
+  },
 
-  // Qahva va qo'shimcha
+  // --- QAHVA VA CHOY ---
   {
     id: 'c1',
-    name: "Limonli choy",
+    name: 'Espresso',
     category: 'coffee',
-    badge: 'ICHIMLIK',
-    price: 7000,
-    icon: 'tea',
+    badge: 'QAHVA',
+    price: 12000,
+    icon: 'coffee',
     inStock: true,
-    description: "Yalpiz va limonli xushbo‘y shifobaxsh choy",
-    image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80"
+    description: "Kuchli va xushbo‘y quyuq italyancha qahva",
+    image: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&w=600&q=80"
   },
   {
     id: 'c2',
     name: 'Kofe Americano',
     category: 'coffee',
-    badge: 'ICHIMLIK',
-    price: 14000,
+    badge: 'QAHVA',
+    price: 15000,
     icon: 'coffee',
     inStock: true,
-    description: "Yangi yanchilgan donali achchiq qora kofe",
+    description: "Yangi yanchilgan donali klassik qora kofe",
     image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80"
   },
   {
     id: 'c3',
     name: 'Kapuchino',
     category: 'coffee',
-    badge: 'ICHIMLIK',
+    badge: 'QAHVA',
     price: 18000,
     icon: 'coffee',
     inStock: true,
-    description: "Qalin sut ko‘pikli va dolchinli kapuchino",
+    description: "Qalin sut ko‘pikli mayin xushbo‘y espresso",
     image: "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=600&q=80"
   },
   {
     id: 'c4',
-    name: 'Cheesecake',
+    name: 'Latte',
     category: 'coffee',
-    badge: 'DESERT',
-    price: 24000,
-    icon: 'cake',
+    badge: 'QAHVA',
+    price: 20000,
+    icon: 'coffee',
     inStock: true,
-    description: "Klassik Nyu-York chizkeyki mevali qaymoq bilan",
-    image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=600&q=80"
+    description: "Nozik sutli va latte-art naqshli qahva",
+    image: "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'c5',
+    name: 'Muzli Iced Latte',
+    category: 'coffee',
+    badge: 'QAHVA',
+    price: 22000,
+    icon: 'coffee',
+    inStock: true,
+    description: "Muz va sovuq sut bilan tayyorlangan tetiklantiruvchi latte",
+    image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'c6',
+    name: 'Limonli va yalpizli choy',
+    category: 'coffee',
+    badge: 'QAHVA',
+    price: 10000,
+    icon: 'tea',
+    inStock: true,
+    description: "Choynakda damlangan xushbo‘y ko‘k yoki qora choy",
+    image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80"
+  }
+];
+
+// 10 ta xodim ro'yxati va ularning oylik maoshlari (Staff & Payroll)
+const DEFAULT_STAFF = [
+  {
+    id: 'emp_1',
+    name: 'Alisher Gayratov',
+    role: 'Bosh kassir',
+    department: 'Kassa',
+    phone: '+998 90 123-45-67',
+    salary: 5500000,
+    shift: '08:00 - 20:00 (1-smena)',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-04-12',
+    experience: '3 yil'
+  },
+  {
+    id: 'emp_2',
+    name: 'Sardor Rahimov',
+    role: 'Bosh oshpaz (Shef)',
+    department: 'Oshxona',
+    phone: '+998 91 234-56-78',
+    salary: 8000000,
+    shift: '09:00 - 21:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2022-08-15',
+    experience: '6 yil'
+  },
+  {
+    id: 'emp_3',
+    name: 'Malika Usmonova',
+    role: 'Kassir / Administrator',
+    department: 'Kassa',
+    phone: '+998 93 345-67-89',
+    salary: 5000000,
+    shift: '12:00 - 23:00 (2-smena)',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-09-01',
+    experience: '2 yil'
+  },
+  {
+    id: 'emp_4',
+    name: 'Jasur Qodirov',
+    role: 'Fastfud oshpazi',
+    department: 'Oshxona',
+    phone: '+998 94 456-78-90',
+    salary: 6000000,
+    shift: '10:00 - 22:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-02-10',
+    experience: '4 yil'
+  },
+  {
+    id: 'emp_5',
+    name: 'Nigora Karimova',
+    role: 'Qandolatchi (Desert ustasi)',
+    department: 'Qandolat',
+    phone: '+998 97 567-89-01',
+    salary: 6500000,
+    shift: '08:00 - 18:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-01-20',
+    experience: '5 yil'
+  },
+  {
+    id: 'emp_6',
+    name: 'Dilshodbek Toirov',
+    role: 'Katta Barista',
+    department: 'Bar',
+    phone: '+998 90 678-90-12',
+    salary: 4800000,
+    shift: '08:00 - 20:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-06-15',
+    experience: '3 yil'
+  },
+  {
+    id: 'emp_7',
+    name: 'Bobur Mirzayev',
+    role: 'Katta ofitsiant',
+    department: 'Zal',
+    phone: '+998 91 789-01-23',
+    salary: 4200000,
+    shift: '09:00 - 21:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-05-10',
+    experience: '2 yil'
+  },
+  {
+    id: 'emp_8',
+    name: 'Aziza Shokirova',
+    role: 'Ofitsiant',
+    department: 'Zal',
+    phone: '+998 93 890-12-34',
+    salary: 3800000,
+    shift: '11:00 - 23:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-11-05',
+    experience: '1 yil'
+  },
+  {
+    id: 'emp_9',
+    name: 'Farrux Ergashev',
+    role: 'Ofitsiant',
+    department: 'Zal',
+    phone: '+998 94 901-23-45',
+    salary: 3800000,
+    shift: '11:00 - 23:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-10-18',
+    experience: '1 yil'
+  },
+  {
+    id: 'emp_10',
+    name: 'Gulbahor Olimova',
+    role: 'Tozalik xodimi',
+    department: 'Servis',
+    phone: '+998 99 012-34-56',
+    salary: 3200000,
+    shift: '07:30 - 19:30',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2022-11-01',
+    experience: '3 yil'
   }
 ];
 
@@ -2382,33 +2778,20 @@ const LoginCard = ({ onLoginSuccess, onGoToRegister }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#1C120B]/95 via-[#23150C]/90 to-[#120A05]/95 pointer-events-none"></div>
 
-        {/* Brand header */}
-        <div className="relative z-10 text-center flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/50 mb-2 p-0.5 bg-[#140C07] group-hover:scale-105 transition">
-            <AppLogo size="w-full h-full" className="rounded-xl" />
+        {/* Brand Showcase with Official App Logo */}
+        <div className="relative z-10 my-auto py-6 flex flex-col items-center justify-center text-center">
+          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-500/60 p-1.5 bg-[#120A05] ring-4 ring-amber-500/20 mb-4 hover:scale-105 transition">
+            <AppLogo size="w-full h-full" className="rounded-2xl" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-wide text-white">Rayhon Cafe</h1>
-          <p className="text-amber-400/90 text-xs font-semibold mt-1">Cafe & Lounge · Har doim siz bilan!</p>
-        </div>
-
-        {/* Center Latte Art Cup on Saucer with Beans illustration */}
-        <div className="relative z-10 my-4 flex items-center justify-center">
-          <div className="relative flex flex-col items-center">
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-[#3D2516]/80 ring-2 ring-amber-500/30 flex items-center justify-center relative bg-[#1B110A]">
-              <img
-                src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80"
-                alt="Latte Cup"
-                className="w-full h-full object-cover scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
-            </div>
-            <p className="mt-3 text-xs text-amber-200/90 font-medium tracking-wide">
-              Iliq muhit va mazali qahva ☕
-            </p>
+          <p className="text-amber-400 text-xs font-bold mt-1">Cafe & Lounge · Har doim siz bilan!</p>
+          <div className="mt-4 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs font-semibold flex items-center gap-2">
+            <span>Iliq muhit va mazali qahva</span>
+            <span>☕</span>
           </div>
         </div>
 
-        <div className="relative z-10 text-center text-stone-400 text-xs">
+        <div className="relative z-10 text-center text-stone-400 text-xs pb-1">
           Boshqaruv tizimiga xavfsiz ulanish
         </div>
       </div>
@@ -2524,263 +2907,9 @@ const LoginCard = ({ onLoginSuccess, onGoToRegister }) => {
           </button>
         </div>
 
-        {/* Switch to Register */}
-        <div className="text-center mt-4 text-[11px] sm:text-xs text-stone-600">
-          Hisobingiz yo‘qmi?{' '}
-          <button
-            type="button"
-            onClick={onGoToRegister}
-            className="text-amber-700 hover:text-amber-800 font-extrabold underline ml-1"
-          >
-            Ro‘yxatdan o‘ting
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// REUSABLE REGISTER CARD (Matching screenshot bottom-right)
-const RegisterCard = ({ onRegisterSuccess, onGoToLogin }) => {
-  const [fullName, setFullName] = React.useState('Alisher Gayratov');
-  const [email, setEmail] = React.useState('alisher@rayhon.uz');
-  const [password, setPassword] = React.useState('123456');
-  const [confirmPassword, setConfirmPassword] = React.useState('123456');
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [avatar, setAvatar] = React.useState('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80');
-  const [error, setError] = React.useState('');
-
-  const presetAvatars = [
-    { label: "Alisher", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80" },
-    { label: "Sardor", url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80" },
-    { label: "Malika", url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=250&q=80" },
-    { label: "Jasur", url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=250&q=80" }
-  ];
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        setError("Rasm hajmi 3MB dan oshmasligi kerak");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setAvatar(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = (e) => {
-    if (e) e.preventDefault();
-    if (!fullName || !email || !password) {
-      setError("Iltimos, barcha maydonlarni to‘ldiring");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Parollar mos kelmadi");
-      return;
-    }
-    const user = {
-      name: fullName,
-      email: email,
-      role: "Kassir",
-      avatar: avatar
-    };
-    try {
-      localStorage.setItem('RAYHON_CAFE_AUTH_USER', JSON.stringify(user));
-    } catch(e) {}
-    if (typeof playSound === 'function') playSound('cash');
-    if (onRegisterSuccess) onRegisterSuccess(user);
-  };
-
-  return (
-    <div className="w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-stone-200/90 grid grid-cols-1 md:grid-cols-2 relative h-full">
-      {/* Left Side: Brand Showcase */}
-      <div className="relative bg-[#170E08] text-white p-6 sm:p-8 flex flex-col justify-between overflow-hidden min-h-[340px] md:min-h-[460px]">
-        <img
-          src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80"
-          alt="Cafe"
-          className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-luminosity"
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1C120B]/95 via-[#23150C]/90 to-[#120A05]/95 pointer-events-none"></div>
-
-        <div className="relative z-10 text-center flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-500/50 mb-2 p-0.5 bg-[#140C07] group-hover:scale-105 transition">
-            <AppLogo size="w-full h-full" className="rounded-xl" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-wide text-white">Rayhon Cafe</h1>
-          <p className="text-amber-400/90 text-xs font-semibold mt-1">Cafe & Lounge · Yangi hisob oching</p>
-        </div>
-
-        <div className="relative z-10 my-4 flex items-center justify-center">
-          <div className="relative flex flex-col items-center">
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-[#3D2516]/80 ring-2 ring-amber-500/30 flex items-center justify-center relative bg-[#1B110A]">
-              <img
-                src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80"
-                alt="Latte Cup"
-                className="w-full h-full object-cover scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
-            </div>
-            <p className="mt-3 text-xs text-amber-200/90 font-medium tracking-wide">
-              Biz bilan yangi marralar sari ✨
-            </p>
-          </div>
-        </div>
-
-        <div className="relative z-10 text-center text-stone-400 text-xs">
-          Xush kelibsiz! Tizimga a’zo bo‘ling
-        </div>
-      </div>
-
-      {/* Right Side: Register Form */}
-      <div className="p-6 sm:p-8 flex flex-col justify-center bg-white">
-        <div className="text-center mb-4">
-          <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">Ro‘yxatdan o‘tish</h2>
-          <p className="text-xs text-stone-500 mt-0.5">Yangi hisob yaratish uchun ma’lumotlarni kiriting</p>
-        </div>
-
-        {error && (
-          <div className="mb-3 p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold text-center">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Avatar Selector / Upload */}
-          <div className="flex items-center gap-3 p-2 bg-stone-50 rounded-2xl border border-stone-200">
-            <div className="relative group shrink-0">
-              <CashierAvatar src={avatar} size="w-12 h-12" className="border-2 border-amber-500 shadow-xs" />
-              <label className="absolute inset-0 bg-stone-950/60 rounded-full flex items-center justify-center cursor-pointer transition opacity-0 group-hover:opacity-100 text-white" title="Rasm yuklash">
-                <Icon name="camera" className="w-4 h-4 text-amber-300" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[11px] font-bold text-stone-700 block">Profil rasmi:</span>
-              <div className="flex items-center gap-1.5 mt-1">
-                {presetAvatars.map((p, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setAvatar(p.url)}
-                    className={`w-6 h-6 rounded-full overflow-hidden border transition ${
-                      avatar === p.url ? 'ring-2 ring-amber-500 border-white scale-110' : 'opacity-70 hover:opacity-100'
-                    }`}
-                    title={p.label}
-                  >
-                    <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-                <label className="px-2 py-0.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-[10px] font-extrabold cursor-pointer transition flex items-center gap-1 ml-auto">
-                  <Icon name="camera" className="w-3 h-3 text-amber-800" />
-                  <span>Rasm qo‘yish</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Full Name */}
-          <div className="relative">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
-              <Icon name="user" className="w-4 h-4" />
-            </div>
-            <input
-              type="text"
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="To‘liq ism"
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-stone-50/80 border border-stone-200 text-xs sm:text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
-            />
-          </div>
-
-          {/* Email */}
-          <div className="relative">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
-              <Icon name="mail" className="w-4 h-4" />
-            </div>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email manzilingiz"
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-stone-50/80 border border-stone-200 text-xs sm:text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
-            />
-          </div>
-
-          {/* Password */}
-          <div className="relative">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
-              <Icon name="lock" className="w-4 h-4" />
-            </div>
-            <input
-              type={showPassword ? "text" : "password"}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Parol"
-              className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-stone-50/80 border border-stone-200 text-xs sm:text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
-            >
-              <Icon name={showPassword ? "eye-off" : "eye"} className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Confirm Password */}
-          <div className="relative">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
-              <Icon name="lock" className="w-4 h-4" />
-            </div>
-            <input
-              type={showPassword ? "text" : "password"}
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Parolni tasdiqlang"
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-stone-50/80 border border-stone-200 text-xs sm:text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full mt-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-amber-500/25 flex items-center justify-center gap-2 transition"
-          >
-            <span>Ro‘yxatdan o‘tish</span>
-            <Icon name="arrow-right" className="w-4 h-4" />
-          </button>
-        </form>
-
-        {/* Switch to Login */}
-        <div className="text-center mt-4 text-[11px] sm:text-xs text-stone-600">
-          Allaqachon hisobingiz bormi?{' '}
-          <button
-            type="button"
-            onClick={onGoToLogin}
-            className="text-amber-700 hover:text-amber-800 font-extrabold underline ml-1"
-          >
-            Kirish
-          </button>
+        {/* Quick Help / Admin notice */}
+        <div className="text-center mt-4 text-[11px] sm:text-xs text-stone-500">
+          Kassir yoki administrator hisobi bilan xavfsiz ulanish
         </div>
       </div>
     </div>
@@ -2788,7 +2917,7 @@ const RegisterCard = ({ onRegisterSuccess, onGoToLogin }) => {
 };
 
 // LOGIN STANDALONE PAGE
-const LoginPage = ({ onLoginSuccess, onGoToRegister, onBackToApp }) => (
+const LoginPage = ({ onLoginSuccess, onBackToApp }) => (
   <div className="min-h-screen bg-[#EDE5D8] flex items-center justify-center p-3 sm:p-6 lg:p-8 animate-fade-in relative">
     {onBackToApp && (
       <button
@@ -2800,29 +2929,10 @@ const LoginPage = ({ onLoginSuccess, onGoToRegister, onBackToApp }) => (
       </button>
     )}
     <div className="max-w-4xl w-full">
-      <LoginCard onLoginSuccess={onLoginSuccess} onGoToRegister={onGoToRegister} />
+      <LoginCard onLoginSuccess={onLoginSuccess} />
     </div>
   </div>
 );
-
-// REGISTER STANDALONE PAGE
-const RegisterPage = ({ onRegisterSuccess, onGoToLogin, onBackToApp }) => (
-  <div className="min-h-screen bg-[#EDE5D8] flex items-center justify-center p-3 sm:p-6 lg:p-8 animate-fade-in relative">
-    {onBackToApp && (
-      <button
-        onClick={onBackToApp}
-        className="absolute top-4 right-4 z-20 px-3.5 py-2 rounded-full bg-white shadow-md text-stone-800 text-xs font-extrabold transition hover:bg-stone-100 flex items-center gap-1.5"
-      >
-        <span>Boshqaruvga qaytish</span>
-        <Icon name="arrow-right" className="w-3.5 h-3.5" />
-      </button>
-    )}
-    <div className="max-w-4xl w-full">
-      <RegisterCard onRegisterSuccess={onRegisterSuccess} onGoToLogin={onGoToLogin} />
-    </div>
-  </div>
-);
-
 
 // POS Order Drawer / Full Order Workspace
 const POSDrawer = ({ 
@@ -4416,7 +4526,7 @@ const TablesView = ({
   );
 };
 
-// 3. KASSIR VA MENYU BOSHQARUVI VIEW
+// 3. MENYU VA TAOMLAR BOSHQARUVI VIEW
 const MenuView = ({ 
   products, 
   onSelectProduct, 
@@ -4441,16 +4551,26 @@ const MenuView = ({
   const occupiedTables = (tables || []).filter(t => t.status === 'occupied' || t.status === 'payment_pending');
 
   const filteredProducts = products.filter(p => {
-    const matchesCat = selectedCategory === 'all' || p.category === selectedCategory;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    let matchesCat = true;
+    if (selectedCategory !== 'all') {
+      if (selectedCategory === 'fastfood') {
+        matchesCat = p.category === 'fastfood' || p.category === 'food';
+      } else {
+        matchesCat = p.category === selectedCategory;
+      }
+    }
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCat && matchesSearch;
   });
 
   const categories = [
     { id: 'all', name: 'Barchasi', count: products.length },
-    { id: 'food', name: 'Taomlar', count: products.filter(p => p.category === 'food').length },
-    { id: 'drinks', name: 'Ichimliklar', count: products.filter(p => p.category === 'drinks').length },
-    { id: 'coffee', name: 'Qahva & Shirinliklar', count: products.filter(p => p.category === 'coffee').length },
+    { id: 'fastfood', name: '🍔 Fastfud', count: products.filter(p => p.category === 'fastfood' || p.category === 'food').length },
+    { id: 'salad', name: '🥗 Salatlar', count: products.filter(p => p.category === 'salad').length },
+    { id: 'dessert', name: '🍰 Desertlar', count: products.filter(p => p.category === 'dessert').length },
+    { id: 'drinks', name: '🥤 Ichimliklar', count: products.filter(p => p.category === 'drinks').length },
+    { id: 'coffee', name: '☕ Qahva & Choy', count: products.filter(p => p.category === 'coffee').length },
   ];
 
   const handleFastAdd = (product) => {
@@ -4462,34 +4582,28 @@ const MenuView = ({
   return (
     <div className="space-y-5">
       
-      {/* 1. KASSIR MA'LUMOTLARI VA SMENA HOLATI BANNERI */}
+      {/* 1. MENYU VA TERMINAL BOSHQARUVI BANNERI */}
       <div className="bg-[#1C120B] text-white rounded-3xl p-5 sm:p-6 border border-stone-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden">
         <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
-          <div className="relative shrink-0">
-            <CashierAvatar 
-              src={currentUser?.avatar} 
-              alt={currentUser?.name || "Kassir"} 
-              size="w-16 h-16 sm:w-18 sm:h-18" 
-              className="border-2 border-amber-500 shadow-md ring-4 ring-amber-500/20" 
-            />
-            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#1C120B]"></span>
+          <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border-2 border-amber-500 shadow-md ring-4 ring-amber-500/20 shrink-0 bg-[#140C07] p-0.5">
+            <AppLogo size="w-full h-full" className="rounded-xl" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{currentUser?.name || "Alisher Gayratov"}</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Menyu va Buyurtmalar</h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                {currentUser?.role || "Kassir"}
+                {products.length} ta mahsulot
               </span>
             </div>
             <p className="text-xs text-stone-300 mt-1 flex items-center gap-2">
               <span className="text-emerald-400 font-bold flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot"></span>
-                Smenada faol
+                Katalog faol
               </span>
               <span className="text-stone-500">•</span>
-              <span>Rayhon Cafe Kassir Terminali</span>
+              <span>Fastfud, Salatlar, Desertlar, Ichimliklar va Qahva</span>
             </p>
-            <p className="text-[11px] text-stone-400 font-mono mt-0.5">{currentUser?.email || "alisher@rayhon.uz"}</p>
+            <p className="text-[11px] text-stone-400 font-mono mt-0.5">Mas’ul xodim: {currentUser?.name || "Alisher Gayratov"}</p>
           </div>
         </div>
 
@@ -4510,7 +4624,7 @@ const MenuView = ({
         </div>
       </div>
 
-      {/* 2. BAND STOLLARNING KASSIR TO'LOV VA HISOB PANELI */}
+      {/* 2. BAND STOLLARNING TO'LOV VA HISOB PANELI */}
       {occupiedTables.length > 0 && (
         <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
@@ -4520,7 +4634,7 @@ const MenuView = ({
                 To‘lov kutilayotgan band stollar ({occupiedTables.length} ta)
               </h3>
             </div>
-            <span className="text-xs text-stone-500 font-medium">Hisob-kitob qilish va mijozga hisob aytish</span>
+            <span className="text-xs text-stone-500 font-medium">Mijoz hisobini aytish va to‘lovni qabul qilish</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -4571,12 +4685,12 @@ const MenuView = ({
         </div>
       )}
 
-      {/* 3. TEZKOR BUYURTMA VA MAHSULOTLAR KATALOGI */}
+      {/* 3. MAHSULOTLAR KATALOGI */}
       <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-black text-stone-900">Tezkor taomlar menyusi</h3>
-            <p className="text-xs text-stone-500">Mahsulotni tanlang va to‘g‘ridan-to‘g‘ri stolga buyurtma qo‘shing</p>
+            <h3 className="text-base font-black text-stone-900">Taomlar, Salatlar, Desertlar va Ichimliklar</h3>
+            <p className="text-xs text-stone-500">Mahsulotni tanlang va to‘g‘ridan-to‘g‘ri stol buyurtmasiga qo‘shing</p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -4622,7 +4736,7 @@ const MenuView = ({
             <Icon name="search" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Mahsulot nomi bo‘yicha qidirish..."
+              placeholder="Mahsulot nomi yoki ta'rifi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
@@ -4630,7 +4744,7 @@ const MenuView = ({
           </div>
         </div>
 
-        {/* Product Cards Grid Matching Screenshot */}
+        {/* Product Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pt-2">
           {filteredProducts.map(product => {
             const isOutOfStock = product.inStock === false;
@@ -4646,6 +4760,482 @@ const MenuView = ({
           })}
         </div>
       </div>
+
+    </div>
+  );
+};
+
+
+// 7. XODIMLAR VA OYLIK MAOSHLAR BOSHQARUVI VIEW
+const StaffView = ({ staff = [], onUpdateStaff, onAddStaff, onDeleteStaff }) => {
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedDept, setSelectedDept] = React.useState('all');
+  const [editingStaff, setEditingStaff] = React.useState(null);
+  const [newStaffModal, setNewStaffModal] = React.useState(false);
+  const [formData, setFormData] = React.useState({
+    name: '',
+    role: 'Ofitsiant',
+    department: 'Zal',
+    phone: '+998 90 ',
+    salary: 4000000,
+    shift: '09:00 - 21:00',
+    status: 'Faol',
+    experience: '1 yil',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80'
+  });
+
+  const totalPayroll = staff.reduce((sum, s) => sum + (s.salary || 0), 0);
+  const activeCount = staff.filter(s => s.status === 'Faol').length;
+  const avgSalary = staff.length > 0 ? Math.round(totalPayroll / staff.length) : 0;
+
+  const departments = [
+    { id: 'all', name: 'Barcha xodimlar', count: staff.length },
+    { id: 'Kassa', name: 'Kassa', count: staff.filter(s => s.department === 'Kassa').length },
+    { id: 'Oshxona', name: 'Oshxona', count: staff.filter(s => s.department === 'Oshxona').length },
+    { id: 'Zal', name: 'Zal / Xizmat', count: staff.filter(s => s.department === 'Zal').length },
+    { id: 'Qandolat', name: 'Qandolat', count: staff.filter(s => s.department === 'Qandolat').length },
+    { id: 'Bar', name: 'Bar', count: staff.filter(s => s.department === 'Bar').length },
+    { id: 'Servis', name: 'Servis / Tozalik', count: staff.filter(s => s.department === 'Servis').length }
+  ];
+
+  const filteredStaff = staff.filter(s => {
+    const matchesDept = selectedDept === 'all' || s.department === selectedDept;
+    const matchesQuery = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         s.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         s.phone.includes(searchQuery);
+    return matchesDept && matchesQuery;
+  });
+
+  const handleSaveSalary = (e) => {
+    e.preventDefault();
+    if (!editingStaff) return;
+    onUpdateStaff(editingStaff.id, {
+      ...editingStaff,
+      salary: parseInt(editingStaff.salary, 10) || 0
+    });
+    setEditingStaff(null);
+  };
+
+  const handleAddNew = (e) => {
+    e.preventDefault();
+    if (!formData.name) return;
+    const newEmp = {
+      id: 'emp_' + Date.now(),
+      name: formData.name,
+      role: formData.role,
+      department: formData.department,
+      phone: formData.phone,
+      salary: parseInt(formData.salary, 10) || 3000000,
+      shift: formData.shift,
+      status: formData.status,
+      experience: formData.experience,
+      avatar: formData.avatar,
+      joinedDate: new Date().toISOString().split('T')[0]
+    };
+    onAddStaff(newEmp);
+    setNewStaffModal(false);
+    setFormData({
+      name: '',
+      role: 'Ofitsiant',
+      department: 'Zal',
+      phone: '+998 90 ',
+      salary: 4000000,
+      shift: '09:00 - 21:00',
+      status: 'Faol',
+      experience: '1 yil',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80'
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      
+      {/* 1. TOP STATS CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Jami Xodimlar */}
+        <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-500">Jami xodimlar</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+              <Icon name="users" className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl sm:text-3xl font-black font-mono text-stone-900">{staff.length}</span>
+            <span className="text-xs text-stone-500 ml-1 font-bold">nafar</span>
+          </div>
+          <p className="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>{activeCount} nafari bugun faol</span>
+          </p>
+        </div>
+
+        {/* Card 2: Jami Oylik Fondi */}
+        <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-500">Oylik maosh fondi</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+              <Icon name="cash" className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black font-mono text-amber-700">{formatUZS(totalPayroll)}</span>
+          </div>
+          <p className="text-[11px] text-stone-400 font-medium mt-1">Har oylik umumiy ish haqi</p>
+        </div>
+
+        {/* Card 3: O'rtacha Oylik */}
+        <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-500">O‘rtacha oylik maosh</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+              <Icon name="stats" className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black font-mono text-stone-900">{formatUZS(avgSalary)}</span>
+          </div>
+          <p className="text-[11px] text-stone-400 font-medium mt-1">1 nafar xodim hisobiga</p>
+        </div>
+
+        {/* Card 4: Smena Intizomi */}
+        <div className="bg-[#1C120B] text-white rounded-3xl p-5 border border-stone-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-300">Smena jadvali</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300">Rayhon Staff</span>
+          </div>
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black font-mono text-white">2 smena</span>
+          </div>
+          <p className="text-[11px] text-amber-400/90 font-medium mt-1">08:00–20:00 / 11:00–23:00</p>
+        </div>
+      </div>
+
+      {/* 2. FILTER & ACTION BAR */}
+      <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-black text-stone-900">Xodimlar ro‘yxati va Maoshlar</h3>
+            <p className="text-xs text-stone-500">Har bir xodimning lavozimi, aloqa ma’lumotlari va belgilangan oylik maoshi</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setNewStaffModal(true)}
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition"
+            >
+              <Icon name="plus" className="w-4 h-4" />
+              <span>Yangi xodim qo‘shish</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Department Filter & Search */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-3 border-t border-stone-100">
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 scrollbar-none">
+            {departments.map(dept => (
+              <button
+                key={dept.id}
+                onClick={() => setSelectedDept(dept.id)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  selectedDept === dept.id
+                    ? 'bg-amber-500 text-stone-950 font-black shadow-xs'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                }`}
+              >
+                <span>{dept.name}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                  selectedDept === dept.id ? 'bg-stone-950 text-amber-300' : 'bg-stone-200 text-stone-600'
+                }`}>
+                  {dept.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full md:w-72">
+            <Icon name="search" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Ism, lavozim yoki telefon..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. STAFF CARDS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredStaff.map((emp) => {
+          return (
+            <div
+              key={emp.id}
+              className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs hover:shadow-md transition flex flex-col justify-between gap-4 group"
+            >
+              {/* Employee Top: Avatar, Name, Role */}
+              <div className="flex items-start gap-3">
+                <div className="relative shrink-0">
+                  <CashierAvatar src={emp.avatar} alt={emp.name} size="w-13 h-13" className="border-2 border-stone-100 shadow-xs" />
+                  <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                    emp.status === 'Faol' ? 'bg-emerald-500' : 'bg-amber-400'
+                  }`}></span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-extrabold text-sm text-stone-900 truncate leading-snug group-hover:text-amber-800 transition">
+                    {emp.name}
+                  </h4>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-100 text-amber-800">
+                      {emp.role}
+                    </span>
+                    <span className="text-[10px] text-stone-400 font-bold">• {emp.department}</span>
+                  </div>
+                  <p className="text-[11px] text-stone-500 font-mono mt-1 flex items-center gap-1">
+                    <span>📞</span>
+                    <span>{emp.phone}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Salary Block (Prominent) */}
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-amber-800/80 block uppercase tracking-wider">Oylik maoshi:</span>
+                  <span className="text-base font-black font-mono text-amber-900 mt-0.5 block">
+                    {formatUZS(emp.salary)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setEditingStaff(emp)}
+                  className="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold shadow-2xs transition"
+                  title="Oylik maoshni o‘zgartirish"
+                >
+                  Tahrirlash ✏️
+                </button>
+              </div>
+
+              {/* Shift and Experience Details */}
+              <div className="space-y-1.5 text-xs text-stone-600 pt-2 border-t border-stone-100">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-stone-400">Smena:</span>
+                  <span className="font-bold text-stone-800">{emp.shift}</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-stone-400">Tajriba:</span>
+                  <span className="font-bold text-stone-800">{emp.experience || '1 yil'}</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-stone-400">Holat:</span>
+                  <button
+                    onClick={() => {
+                      const newStatus = emp.status === 'Faol' ? 'Dam olishda' : 'Faol';
+                      onUpdateStaff(emp.id, { ...emp, status: newStatus });
+                    }}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition ${
+                      emp.status === 'Faol' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}
+                  >
+                    {emp.status}
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="pt-2 border-t border-stone-100 flex items-center justify-between gap-2">
+                <a
+                  href={`tel:${emp.phone.replace(/\s/g, '')}`}
+                  className="flex-1 py-1.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                >
+                  <span>Qo‘ng‘iroq</span>
+                </a>
+                <button
+                  onClick={() => onDeleteStaff(emp.id)}
+                  className="p-1.5 rounded-xl text-stone-400 hover:text-red-600 hover:bg-red-50 border border-stone-200 transition"
+                  title="Xodimni o‘chirish"
+                >
+                  <Icon name="trash" className="w-4 h-4" />
+                </button>
+              </div>
+
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 4. MODAL: EDIT SALARY */}
+      {editingStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="font-black text-base text-stone-900">Oylik maoshni o‘zgartirish</h3>
+              <button onClick={() => setEditingStaff(null)} className="text-stone-400 hover:text-stone-600">
+                <Icon name="close" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSalary} className="space-y-4 mt-4">
+              <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-2xl">
+                <CashierAvatar src={editingStaff.avatar} size="w-10 h-10" />
+                <div>
+                  <h4 className="font-extrabold text-xs text-stone-900">{editingStaff.name}</h4>
+                  <p className="text-[10px] text-stone-400">{editingStaff.role} ({editingStaff.department})</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Oylik maosh summasi (so‘mda):</label>
+                <input
+                  type="number"
+                  step="50000"
+                  required
+                  value={editingStaff.salary}
+                  onChange={(e) => setEditingStaff({ ...editingStaff, salary: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm font-black font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <p className="text-[11px] font-mono text-amber-700 font-extrabold mt-1">
+                  = {formatUZS(editingStaff.salary)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Smena vaqti:</label>
+                <input
+                  type="text"
+                  value={editingStaff.shift || ''}
+                  onChange={(e) => setEditingStaff({ ...editingStaff, shift: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingStaff(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-700 font-bold text-xs hover:bg-stone-50"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow-md transition"
+                >
+                  Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL: ADD NEW STAFF */}
+      {newStaffModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="font-black text-base text-stone-900">Yangi xodim qo‘shish</h3>
+              <button onClick={() => setNewStaffModal(false)} className="text-stone-400 hover:text-stone-600">
+                <Icon name="close" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddNew} className="space-y-3 mt-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Ism va familiya:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Masalan: Jamshid Aliyev"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Lavozimi:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Masalan: Barista"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Bo‘lim:</label>
+                  <select
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  >
+                    <option value="Kassa">Kassa</option>
+                    <option value="Oshxona">Oshxona</option>
+                    <option value="Zal">Zal / Xizmat</option>
+                    <option value="Qandolat">Qandolat</option>
+                    <option value="Bar">Bar</option>
+                    <option value="Servis">Servis / Tozalik</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Telefon raqam:</label>
+                  <input
+                    type="text"
+                    placeholder="+998 90 123-45-67"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Oylik maosh (so‘m):</label>
+                  <input
+                    type="number"
+                    step="50000"
+                    required
+                    value={formData.salary}
+                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-black font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Smena vaqti:</label>
+                <input
+                  type="text"
+                  placeholder="08:00 - 20:00"
+                  value={formData.shift}
+                  onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setNewStaffModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-700 font-bold text-xs hover:bg-stone-50"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow-md transition"
+                >
+                  Qo‘shish
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
@@ -5681,12 +6271,29 @@ const App = () => {
 
   const [products, setProducts] = React.useState(() => {
     try {
-      const saved = localStorage.getItem('RAYHON_CAFE_PRODUCTS_V2');
+      const saved = localStorage.getItem('RAYHON_CAFE_PRODUCTS_V3');
       return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
     } catch (e) {
       return DEFAULT_PRODUCTS;
     }
   });
+
+  const [staff, setStaff] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_STAFF_V1');
+      return saved ? JSON.parse(saved) : DEFAULT_STAFF;
+    } catch (e) {
+      return DEFAULT_STAFF;
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('RAYHON_CAFE_STAFF_V1', JSON.stringify(staff));
+    } catch (e) {
+      console.error("Failed to save staff", e);
+    }
+  }, [staff]);
 
   const [orderHistory, setOrderHistory] = React.useState(() => {
     try {
@@ -5901,7 +6508,7 @@ const App = () => {
 
   React.useEffect(() => {
     try {
-      localStorage.setItem('RAYHON_CAFE_PRODUCTS_V2', JSON.stringify(products));
+      localStorage.setItem('RAYHON_CAFE_PRODUCTS_V3', JSON.stringify(products));
     } catch (e) {}
   }, [products]);
 
@@ -6182,6 +6789,22 @@ const App = () => {
     });
   };
 
+  const handleUpdateStaff = (updatedMember) => {
+    setStaff(prev => prev.map(s => s.id === updatedMember.id ? updatedMember : s));
+    addToast('success', 'Xodim yangilandi', `${updatedMember.name} ma'lumotlari saqlandi`);
+  };
+
+  const handleAddStaff = (newMember) => {
+    setStaff(prev => [newMember, ...prev]);
+    addToast('success', 'Yangi xodim qo‘shildi', `${newMember.name} muvaffaqiyatli kiritildi`);
+  };
+
+  const handleDeleteStaff = (staffId) => {
+    const member = staff.find(s => s.id === staffId);
+    setStaff(prev => prev.filter(s => s.id !== staffId));
+    addToast('info', 'Xodim o‘chirildi', `${member?.name || 'Xodim'} ro‘yxatdan chiqarildi`);
+  };
+
   const handleUpdateSettings = (newSettings) => {
     setSettings(newSettings);
     addToast('success', "Sozlamalar muvaffaqiyatli saqlandi");
@@ -6226,8 +6849,9 @@ const App = () => {
 
   const navItems = [
     { id: 'dashboard', name: 'Stollar', icon: 'chair', badge: occupiedCount + pendingCount > 0 ? `${occupiedCount + pendingCount}` : null },
+    { id: 'menu', name: 'Menyu', icon: 'utensils' },
+    { id: 'staff', name: 'Xodimlar', icon: 'users', badge: staff ? `${staff.length}` : '10' },
     { id: 'stats', name: 'Hisobotlar', icon: 'stats' },
-    { id: 'menu', name: 'Kassir', icon: 'card' },
     { id: 'settings', name: 'Sozlamalar', icon: 'settings' },
   ];
 
@@ -6262,24 +6886,6 @@ const App = () => {
             setAuthPage('app');
             addToast('success', `Xush kelibsiz, ${user?.name || 'Alisher'}!`, 'Tizimga muvaffaqiyatli kirdingiz');
           }}
-          onGoToRegister={() => setAuthPage('register')}
-          onBackToApp={() => setAuthPage('app')}
-        />
-        <ToastContainer toasts={toasts} onDismiss={removeToast} />
-      </div>
-    );
-  }
-
-  if (authPage === 'register') {
-    return (
-      <div className="relative">
-        <RegisterPage
-          onRegisterSuccess={(user) => {
-            if (user) setCurrentUser(user);
-            setAuthPage('app');
-            addToast('success', `Tabriklaymiz, ${user?.name || 'Alisher'}!`, 'Hisobingiz yaratildi');
-          }}
-          onGoToLogin={() => setAuthPage('login')}
           onBackToApp={() => setAuthPage('app')}
         />
         <ToastContainer toasts={toasts} onDismiss={removeToast} />
@@ -6542,13 +7148,7 @@ const App = () => {
               >
                 Kirish
               </button>
-              <button
-                onClick={() => setAuthPage('register')}
-                className="px-2.5 py-1 rounded-full text-stone-700 hover:text-stone-950 hover:bg-white transition"
-                title="Ro‘yxatdan o‘tish sahifasini ko‘rish"
-              >
-                Ro‘yxatdan o‘tish
-              </button>
+              
             </div>
 
             {/* Date & Time pill container */}
@@ -6669,6 +7269,15 @@ const App = () => {
                   const tableId = targetTableId || (tables.find(t => t.status === 'occupied')?.id || tables.find(t => t.status === 'available')?.id || 1);
                   handleAddItem(tableId, product);
                 }}
+              />
+            )}
+
+            {activeTab === 'staff' && (
+              <StaffView
+                staff={staff}
+                onUpdateStaff={handleUpdateStaff}
+                onAddStaff={handleAddStaff}
+                onDeleteStaff={handleDeleteStaff}
               />
             )}
 

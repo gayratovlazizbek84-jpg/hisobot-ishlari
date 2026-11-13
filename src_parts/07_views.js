@@ -636,7 +636,7 @@ const TablesView = ({
   );
 };
 
-// 3. KASSIR VA MENYU BOSHQARUVI VIEW
+// 3. MENYU VA TAOMLAR BOSHQARUVI VIEW
 const MenuView = ({ 
   products, 
   onSelectProduct, 
@@ -661,16 +661,26 @@ const MenuView = ({
   const occupiedTables = (tables || []).filter(t => t.status === 'occupied' || t.status === 'payment_pending');
 
   const filteredProducts = products.filter(p => {
-    const matchesCat = selectedCategory === 'all' || p.category === selectedCategory;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    let matchesCat = true;
+    if (selectedCategory !== 'all') {
+      if (selectedCategory === 'fastfood') {
+        matchesCat = p.category === 'fastfood' || p.category === 'food';
+      } else {
+        matchesCat = p.category === selectedCategory;
+      }
+    }
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCat && matchesSearch;
   });
 
   const categories = [
     { id: 'all', name: 'Barchasi', count: products.length },
-    { id: 'food', name: 'Taomlar', count: products.filter(p => p.category === 'food').length },
-    { id: 'drinks', name: 'Ichimliklar', count: products.filter(p => p.category === 'drinks').length },
-    { id: 'coffee', name: 'Qahva & Shirinliklar', count: products.filter(p => p.category === 'coffee').length },
+    { id: 'fastfood', name: '🍔 Fastfud', count: products.filter(p => p.category === 'fastfood' || p.category === 'food').length },
+    { id: 'salad', name: '🥗 Salatlar', count: products.filter(p => p.category === 'salad').length },
+    { id: 'dessert', name: '🍰 Desertlar', count: products.filter(p => p.category === 'dessert').length },
+    { id: 'drinks', name: '🥤 Ichimliklar', count: products.filter(p => p.category === 'drinks').length },
+    { id: 'coffee', name: '☕ Qahva & Choy', count: products.filter(p => p.category === 'coffee').length },
   ];
 
   const handleFastAdd = (product) => {
@@ -682,34 +692,28 @@ const MenuView = ({
   return (
     <div className="space-y-5">
       
-      {/* 1. KASSIR MA'LUMOTLARI VA SMENA HOLATI BANNERI */}
+      {/* 1. MENYU VA TERMINAL BOSHQARUVI BANNERI */}
       <div className="bg-[#1C120B] text-white rounded-3xl p-5 sm:p-6 border border-stone-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden">
         <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
-          <div className="relative shrink-0">
-            <CashierAvatar 
-              src={currentUser?.avatar} 
-              alt={currentUser?.name || "Kassir"} 
-              size="w-16 h-16 sm:w-18 sm:h-18" 
-              className="border-2 border-amber-500 shadow-md ring-4 ring-amber-500/20" 
-            />
-            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#1C120B]"></span>
+          <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border-2 border-amber-500 shadow-md ring-4 ring-amber-500/20 shrink-0 bg-[#140C07] p-0.5">
+            <AppLogo size="w-full h-full" className="rounded-xl" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{currentUser?.name || "Alisher Gayratov"}</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Menyu va Buyurtmalar</h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                {currentUser?.role || "Kassir"}
+                {products.length} ta mahsulot
               </span>
             </div>
             <p className="text-xs text-stone-300 mt-1 flex items-center gap-2">
               <span className="text-emerald-400 font-bold flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot"></span>
-                Smenada faol
+                Katalog faol
               </span>
               <span className="text-stone-500">•</span>
-              <span>Rayhon Cafe Kassir Terminali</span>
+              <span>Fastfud, Salatlar, Desertlar, Ichimliklar va Qahva</span>
             </p>
-            <p className="text-[11px] text-stone-400 font-mono mt-0.5">{currentUser?.email || "alisher@rayhon.uz"}</p>
+            <p className="text-[11px] text-stone-400 font-mono mt-0.5">Mas’ul xodim: {currentUser?.name || "Alisher Gayratov"}</p>
           </div>
         </div>
 
@@ -730,7 +734,7 @@ const MenuView = ({
         </div>
       </div>
 
-      {/* 2. BAND STOLLARNING KASSIR TO'LOV VA HISOB PANELI */}
+      {/* 2. BAND STOLLARNING TO'LOV VA HISOB PANELI */}
       {occupiedTables.length > 0 && (
         <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
@@ -740,7 +744,7 @@ const MenuView = ({
                 To‘lov kutilayotgan band stollar ({occupiedTables.length} ta)
               </h3>
             </div>
-            <span className="text-xs text-stone-500 font-medium">Hisob-kitob qilish va mijozga hisob aytish</span>
+            <span className="text-xs text-stone-500 font-medium">Mijoz hisobini aytish va to‘lovni qabul qilish</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -791,12 +795,12 @@ const MenuView = ({
         </div>
       )}
 
-      {/* 3. TEZKOR BUYURTMA VA MAHSULOTLAR KATALOGI */}
+      {/* 3. MAHSULOTLAR KATALOGI */}
       <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-black text-stone-900">Tezkor taomlar menyusi</h3>
-            <p className="text-xs text-stone-500">Mahsulotni tanlang va to‘g‘ridan-to‘g‘ri stolga buyurtma qo‘shing</p>
+            <h3 className="text-base font-black text-stone-900">Taomlar, Salatlar, Desertlar va Ichimliklar</h3>
+            <p className="text-xs text-stone-500">Mahsulotni tanlang va to‘g‘ridan-to‘g‘ri stol buyurtmasiga qo‘shing</p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -842,7 +846,7 @@ const MenuView = ({
             <Icon name="search" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Mahsulot nomi bo‘yicha qidirish..."
+              placeholder="Mahsulot nomi yoki ta'rifi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
@@ -850,7 +854,7 @@ const MenuView = ({
           </div>
         </div>
 
-        {/* Product Cards Grid Matching Screenshot */}
+        {/* Product Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pt-2">
           {filteredProducts.map(product => {
             const isOutOfStock = product.inStock === false;
@@ -866,6 +870,482 @@ const MenuView = ({
           })}
         </div>
       </div>
+
+    </div>
+  );
+};
+
+
+// 7. XODIMLAR VA OYLIK MAOSHLAR BOSHQARUVI VIEW
+const StaffView = ({ staff = [], onUpdateStaff, onAddStaff, onDeleteStaff }) => {
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedDept, setSelectedDept] = React.useState('all');
+  const [editingStaff, setEditingStaff] = React.useState(null);
+  const [newStaffModal, setNewStaffModal] = React.useState(false);
+  const [formData, setFormData] = React.useState({
+    name: '',
+    role: 'Ofitsiant',
+    department: 'Zal',
+    phone: '+998 90 ',
+    salary: 4000000,
+    shift: '09:00 - 21:00',
+    status: 'Faol',
+    experience: '1 yil',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80'
+  });
+
+  const totalPayroll = staff.reduce((sum, s) => sum + (s.salary || 0), 0);
+  const activeCount = staff.filter(s => s.status === 'Faol').length;
+  const avgSalary = staff.length > 0 ? Math.round(totalPayroll / staff.length) : 0;
+
+  const departments = [
+    { id: 'all', name: 'Barcha xodimlar', count: staff.length },
+    { id: 'Kassa', name: 'Kassa', count: staff.filter(s => s.department === 'Kassa').length },
+    { id: 'Oshxona', name: 'Oshxona', count: staff.filter(s => s.department === 'Oshxona').length },
+    { id: 'Zal', name: 'Zal / Xizmat', count: staff.filter(s => s.department === 'Zal').length },
+    { id: 'Qandolat', name: 'Qandolat', count: staff.filter(s => s.department === 'Qandolat').length },
+    { id: 'Bar', name: 'Bar', count: staff.filter(s => s.department === 'Bar').length },
+    { id: 'Servis', name: 'Servis / Tozalik', count: staff.filter(s => s.department === 'Servis').length }
+  ];
+
+  const filteredStaff = staff.filter(s => {
+    const matchesDept = selectedDept === 'all' || s.department === selectedDept;
+    const matchesQuery = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         s.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         s.phone.includes(searchQuery);
+    return matchesDept && matchesQuery;
+  });
+
+  const handleSaveSalary = (e) => {
+    e.preventDefault();
+    if (!editingStaff) return;
+    onUpdateStaff(editingStaff.id, {
+      ...editingStaff,
+      salary: parseInt(editingStaff.salary, 10) || 0
+    });
+    setEditingStaff(null);
+  };
+
+  const handleAddNew = (e) => {
+    e.preventDefault();
+    if (!formData.name) return;
+    const newEmp = {
+      id: 'emp_' + Date.now(),
+      name: formData.name,
+      role: formData.role,
+      department: formData.department,
+      phone: formData.phone,
+      salary: parseInt(formData.salary, 10) || 3000000,
+      shift: formData.shift,
+      status: formData.status,
+      experience: formData.experience,
+      avatar: formData.avatar,
+      joinedDate: new Date().toISOString().split('T')[0]
+    };
+    onAddStaff(newEmp);
+    setNewStaffModal(false);
+    setFormData({
+      name: '',
+      role: 'Ofitsiant',
+      department: 'Zal',
+      phone: '+998 90 ',
+      salary: 4000000,
+      shift: '09:00 - 21:00',
+      status: 'Faol',
+      experience: '1 yil',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80'
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      
+      {/* 1. TOP STATS CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Jami Xodimlar */}
+        <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-500">Jami xodimlar</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+              <Icon name="users" className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl sm:text-3xl font-black font-mono text-stone-900">{staff.length}</span>
+            <span className="text-xs text-stone-500 ml-1 font-bold">nafar</span>
+          </div>
+          <p className="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>{activeCount} nafari bugun faol</span>
+          </p>
+        </div>
+
+        {/* Card 2: Jami Oylik Fondi */}
+        <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-500">Oylik maosh fondi</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+              <Icon name="cash" className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black font-mono text-amber-700">{formatUZS(totalPayroll)}</span>
+          </div>
+          <p className="text-[11px] text-stone-400 font-medium mt-1">Har oylik umumiy ish haqi</p>
+        </div>
+
+        {/* Card 3: O'rtacha Oylik */}
+        <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-500">O‘rtacha oylik maosh</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+              <Icon name="stats" className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black font-mono text-stone-900">{formatUZS(avgSalary)}</span>
+          </div>
+          <p className="text-[11px] text-stone-400 font-medium mt-1">1 nafar xodim hisobiga</p>
+        </div>
+
+        {/* Card 4: Smena Intizomi */}
+        <div className="bg-[#1C120B] text-white rounded-3xl p-5 border border-stone-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-300">Smena jadvali</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300">Rayhon Staff</span>
+          </div>
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black font-mono text-white">2 smena</span>
+          </div>
+          <p className="text-[11px] text-amber-400/90 font-medium mt-1">08:00–20:00 / 11:00–23:00</p>
+        </div>
+      </div>
+
+      {/* 2. FILTER & ACTION BAR */}
+      <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-black text-stone-900">Xodimlar ro‘yxati va Maoshlar</h3>
+            <p className="text-xs text-stone-500">Har bir xodimning lavozimi, aloqa ma’lumotlari va belgilangan oylik maoshi</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setNewStaffModal(true)}
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition"
+            >
+              <Icon name="plus" className="w-4 h-4" />
+              <span>Yangi xodim qo‘shish</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Department Filter & Search */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-3 border-t border-stone-100">
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 scrollbar-none">
+            {departments.map(dept => (
+              <button
+                key={dept.id}
+                onClick={() => setSelectedDept(dept.id)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  selectedDept === dept.id
+                    ? 'bg-amber-500 text-stone-950 font-black shadow-xs'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                }`}
+              >
+                <span>{dept.name}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                  selectedDept === dept.id ? 'bg-stone-950 text-amber-300' : 'bg-stone-200 text-stone-600'
+                }`}>
+                  {dept.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full md:w-72">
+            <Icon name="search" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Ism, lavozim yoki telefon..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. STAFF CARDS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredStaff.map((emp) => {
+          return (
+            <div
+              key={emp.id}
+              className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs hover:shadow-md transition flex flex-col justify-between gap-4 group"
+            >
+              {/* Employee Top: Avatar, Name, Role */}
+              <div className="flex items-start gap-3">
+                <div className="relative shrink-0">
+                  <CashierAvatar src={emp.avatar} alt={emp.name} size="w-13 h-13" className="border-2 border-stone-100 shadow-xs" />
+                  <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                    emp.status === 'Faol' ? 'bg-emerald-500' : 'bg-amber-400'
+                  }`}></span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-extrabold text-sm text-stone-900 truncate leading-snug group-hover:text-amber-800 transition">
+                    {emp.name}
+                  </h4>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-100 text-amber-800">
+                      {emp.role}
+                    </span>
+                    <span className="text-[10px] text-stone-400 font-bold">• {emp.department}</span>
+                  </div>
+                  <p className="text-[11px] text-stone-500 font-mono mt-1 flex items-center gap-1">
+                    <span>📞</span>
+                    <span>{emp.phone}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Salary Block (Prominent) */}
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-amber-800/80 block uppercase tracking-wider">Oylik maoshi:</span>
+                  <span className="text-base font-black font-mono text-amber-900 mt-0.5 block">
+                    {formatUZS(emp.salary)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setEditingStaff(emp)}
+                  className="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold shadow-2xs transition"
+                  title="Oylik maoshni o‘zgartirish"
+                >
+                  Tahrirlash ✏️
+                </button>
+              </div>
+
+              {/* Shift and Experience Details */}
+              <div className="space-y-1.5 text-xs text-stone-600 pt-2 border-t border-stone-100">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-stone-400">Smena:</span>
+                  <span className="font-bold text-stone-800">{emp.shift}</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-stone-400">Tajriba:</span>
+                  <span className="font-bold text-stone-800">{emp.experience || '1 yil'}</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-stone-400">Holat:</span>
+                  <button
+                    onClick={() => {
+                      const newStatus = emp.status === 'Faol' ? 'Dam olishda' : 'Faol';
+                      onUpdateStaff(emp.id, { ...emp, status: newStatus });
+                    }}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition ${
+                      emp.status === 'Faol' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}
+                  >
+                    {emp.status}
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="pt-2 border-t border-stone-100 flex items-center justify-between gap-2">
+                <a
+                  href={`tel:${emp.phone.replace(/\s/g, '')}`}
+                  className="flex-1 py-1.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                >
+                  <span>Qo‘ng‘iroq</span>
+                </a>
+                <button
+                  onClick={() => onDeleteStaff(emp.id)}
+                  className="p-1.5 rounded-xl text-stone-400 hover:text-red-600 hover:bg-red-50 border border-stone-200 transition"
+                  title="Xodimni o‘chirish"
+                >
+                  <Icon name="trash" className="w-4 h-4" />
+                </button>
+              </div>
+
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 4. MODAL: EDIT SALARY */}
+      {editingStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="font-black text-base text-stone-900">Oylik maoshni o‘zgartirish</h3>
+              <button onClick={() => setEditingStaff(null)} className="text-stone-400 hover:text-stone-600">
+                <Icon name="close" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSalary} className="space-y-4 mt-4">
+              <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-2xl">
+                <CashierAvatar src={editingStaff.avatar} size="w-10 h-10" />
+                <div>
+                  <h4 className="font-extrabold text-xs text-stone-900">{editingStaff.name}</h4>
+                  <p className="text-[10px] text-stone-400">{editingStaff.role} ({editingStaff.department})</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Oylik maosh summasi (so‘mda):</label>
+                <input
+                  type="number"
+                  step="50000"
+                  required
+                  value={editingStaff.salary}
+                  onChange={(e) => setEditingStaff({ ...editingStaff, salary: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm font-black font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <p className="text-[11px] font-mono text-amber-700 font-extrabold mt-1">
+                  = {formatUZS(editingStaff.salary)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Smena vaqti:</label>
+                <input
+                  type="text"
+                  value={editingStaff.shift || ''}
+                  onChange={(e) => setEditingStaff({ ...editingStaff, shift: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingStaff(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-700 font-bold text-xs hover:bg-stone-50"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow-md transition"
+                >
+                  Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL: ADD NEW STAFF */}
+      {newStaffModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="font-black text-base text-stone-900">Yangi xodim qo‘shish</h3>
+              <button onClick={() => setNewStaffModal(false)} className="text-stone-400 hover:text-stone-600">
+                <Icon name="close" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddNew} className="space-y-3 mt-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Ism va familiya:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Masalan: Jamshid Aliyev"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Lavozimi:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Masalan: Barista"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Bo‘lim:</label>
+                  <select
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  >
+                    <option value="Kassa">Kassa</option>
+                    <option value="Oshxona">Oshxona</option>
+                    <option value="Zal">Zal / Xizmat</option>
+                    <option value="Qandolat">Qandolat</option>
+                    <option value="Bar">Bar</option>
+                    <option value="Servis">Servis / Tozalik</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Telefon raqam:</label>
+                  <input
+                    type="text"
+                    placeholder="+998 90 123-45-67"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Oylik maosh (so‘m):</label>
+                  <input
+                    type="number"
+                    step="50000"
+                    required
+                    value={formData.salary}
+                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-black font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Smena vaqti:</label>
+                <input
+                  type="text"
+                  placeholder="08:00 - 20:00"
+                  value={formData.shift}
+                  onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setNewStaffModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-700 font-bold text-xs hover:bg-stone-50"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow-md transition"
+                >
+                  Qo‘shish
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

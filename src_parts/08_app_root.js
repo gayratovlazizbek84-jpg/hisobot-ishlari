@@ -12,12 +12,29 @@ const App = () => {
 
   const [products, setProducts] = React.useState(() => {
     try {
-      const saved = localStorage.getItem('RAYHON_CAFE_PRODUCTS_V2');
+      const saved = localStorage.getItem('RAYHON_CAFE_PRODUCTS_V3');
       return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
     } catch (e) {
       return DEFAULT_PRODUCTS;
     }
   });
+
+  const [staff, setStaff] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('RAYHON_CAFE_STAFF_V1');
+      return saved ? JSON.parse(saved) : DEFAULT_STAFF;
+    } catch (e) {
+      return DEFAULT_STAFF;
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('RAYHON_CAFE_STAFF_V1', JSON.stringify(staff));
+    } catch (e) {
+      console.error("Failed to save staff", e);
+    }
+  }, [staff]);
 
   const [orderHistory, setOrderHistory] = React.useState(() => {
     try {
@@ -232,7 +249,7 @@ const App = () => {
 
   React.useEffect(() => {
     try {
-      localStorage.setItem('RAYHON_CAFE_PRODUCTS_V2', JSON.stringify(products));
+      localStorage.setItem('RAYHON_CAFE_PRODUCTS_V3', JSON.stringify(products));
     } catch (e) {}
   }, [products]);
 
@@ -513,6 +530,22 @@ const App = () => {
     });
   };
 
+  const handleUpdateStaff = (updatedMember) => {
+    setStaff(prev => prev.map(s => s.id === updatedMember.id ? updatedMember : s));
+    addToast('success', 'Xodim yangilandi', `${updatedMember.name} ma'lumotlari saqlandi`);
+  };
+
+  const handleAddStaff = (newMember) => {
+    setStaff(prev => [newMember, ...prev]);
+    addToast('success', 'Yangi xodim qo‘shildi', `${newMember.name} muvaffaqiyatli kiritildi`);
+  };
+
+  const handleDeleteStaff = (staffId) => {
+    const member = staff.find(s => s.id === staffId);
+    setStaff(prev => prev.filter(s => s.id !== staffId));
+    addToast('info', 'Xodim o‘chirildi', `${member?.name || 'Xodim'} ro‘yxatdan chiqarildi`);
+  };
+
   const handleUpdateSettings = (newSettings) => {
     setSettings(newSettings);
     addToast('success', "Sozlamalar muvaffaqiyatli saqlandi");
@@ -557,8 +590,9 @@ const App = () => {
 
   const navItems = [
     { id: 'dashboard', name: 'Stollar', icon: 'chair', badge: occupiedCount + pendingCount > 0 ? `${occupiedCount + pendingCount}` : null },
+    { id: 'menu', name: 'Menyu', icon: 'utensils' },
+    { id: 'staff', name: 'Xodimlar', icon: 'users', badge: staff ? `${staff.length}` : '10' },
     { id: 'stats', name: 'Hisobotlar', icon: 'stats' },
-    { id: 'menu', name: 'Kassir', icon: 'card' },
     { id: 'settings', name: 'Sozlamalar', icon: 'settings' },
   ];
 
@@ -593,24 +627,6 @@ const App = () => {
             setAuthPage('app');
             addToast('success', `Xush kelibsiz, ${user?.name || 'Alisher'}!`, 'Tizimga muvaffaqiyatli kirdingiz');
           }}
-          onGoToRegister={() => setAuthPage('register')}
-          onBackToApp={() => setAuthPage('app')}
-        />
-        <ToastContainer toasts={toasts} onDismiss={removeToast} />
-      </div>
-    );
-  }
-
-  if (authPage === 'register') {
-    return (
-      <div className="relative">
-        <RegisterPage
-          onRegisterSuccess={(user) => {
-            if (user) setCurrentUser(user);
-            setAuthPage('app');
-            addToast('success', `Tabriklaymiz, ${user?.name || 'Alisher'}!`, 'Hisobingiz yaratildi');
-          }}
-          onGoToLogin={() => setAuthPage('login')}
           onBackToApp={() => setAuthPage('app')}
         />
         <ToastContainer toasts={toasts} onDismiss={removeToast} />
@@ -873,13 +889,7 @@ const App = () => {
               >
                 Kirish
               </button>
-              <button
-                onClick={() => setAuthPage('register')}
-                className="px-2.5 py-1 rounded-full text-stone-700 hover:text-stone-950 hover:bg-white transition"
-                title="Ro‘yxatdan o‘tish sahifasini ko‘rish"
-              >
-                Ro‘yxatdan o‘tish
-              </button>
+              
             </div>
 
             {/* Date & Time pill container */}
@@ -1000,6 +1010,15 @@ const App = () => {
                   const tableId = targetTableId || (tables.find(t => t.status === 'occupied')?.id || tables.find(t => t.status === 'available')?.id || 1);
                   handleAddItem(tableId, product);
                 }}
+              />
+            )}
+
+            {activeTab === 'staff' && (
+              <StaffView
+                staff={staff}
+                onUpdateStaff={handleUpdateStaff}
+                onAddStaff={handleAddStaff}
+                onDeleteStaff={handleDeleteStaff}
               />
             )}
 

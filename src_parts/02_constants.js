@@ -196,80 +196,279 @@ const calculateRevenueMetrics = (orderHistory) => {
 const WAITERS_LIST = ["Alisher", "Sardor", "Malika", "Bobur", "Jasur"];
 
 // Initial Sample Products (Matching exact 10 products from screenshot media_1794389708896_9c2eb201.jpg)
+// Initial Sample Products (Fastfud, Salatlar, Desertlar, Ichimliklar, Qahva)
 const DEFAULT_PRODUCTS = [
-  // 1. Hot Dog
+  // --- FASTFUD ---
   {
     id: 'f1',
     name: 'Hot Dog',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 18000,
     icon: 'hotdog',
     inStock: true,
     description: "Xantal va sosiskali klassik issiq hot-dog",
     image: "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=600&q=80"
   },
-  // 2. Hamburger
   {
     id: 'f2',
     name: 'Hamburger',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 25000,
     icon: 'hamburger',
     inStock: true,
     description: "Shirali go‘shtli kotlet va maxsus sousli burger",
     image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80"
   },
-  // 3. Cheeseburger
   {
     id: 'f3',
     name: 'Cheeseburger',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 30000,
     icon: 'cheeseburger',
     inStock: true,
     description: "Eritilgan cheddar pishloqli mazali burger",
     image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=600&q=80"
   },
-  // 4. Lavash
   {
     id: 'f4',
+    name: 'Double Burger',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 38000,
+    icon: 'hamburger',
+    inStock: true,
+    description: "Ikki qavatli shirali mol go‘shti va erigan pishloq",
+    image: "https://images.unsplash.com/photo-1583032015879-661d94b0d01f?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f5',
     name: 'Lavash',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 28000,
     icon: 'lavash',
     inStock: true,
     description: "Grilda qarsildoq pishirilgan tovuqli go‘shtli lavash",
     image: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=600&q=80"
   },
-  // 5. French Fries
   {
-    id: 'f5',
+    id: 'f6',
+    name: 'Pishloqli Lavash',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 32000,
+    icon: 'lavash',
+    inStock: true,
+    description: "Ko‘p pishloqli va sousli to‘yimli lavash",
+    image: "https://images.unsplash.com/photo-1561651823-34feb02250e4?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f7',
     name: 'French Fries',
-    category: 'food',
-    badge: 'TAOM',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 15000,
     icon: 'fries',
     inStock: true,
     description: "Oltin rang qarsildoq fri kartoshkasi",
     image: "https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=600&q=80"
   },
-  // 6. Pizza
   {
-    id: 'f6',
-    name: 'Pizza',
-    category: 'food',
-    badge: 'TAOM',
+    id: 'f8',
+    name: 'Pishloqli fri',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 20000,
+    icon: 'fries',
+    inStock: true,
+    description: "Issiq eritilgan pishloq sousli fri kartoshkasi",
+    image: "https://images.unsplash.com/photo-1585109649139-366815a0d713?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f9',
+    name: 'Tovuqli stripslar',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 24000,
+    icon: 'chicken',
+    inStock: true,
+    description: "Qarsildoq panirlangan tovuq bo‘laklari va sous",
+    image: "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f10',
+    name: 'Klab sendvich',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 26000,
+    icon: 'sandwich',
+    inStock: true,
+    description: "Toster non, tovuq go‘shti, pishloq va pomidor",
+    image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'f11',
+    name: 'Pepperoni Pizza',
+    category: 'fastfood',
+    badge: 'FASTFUD',
     price: 45000,
     icon: 'pizza',
     inStock: true,
     description: "Mozzarella pishlog‘i va pepperoni kolbasali pizza",
     image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80"
   },
-  // 7. Fanta 0.5L
+  {
+    id: 'f12',
+    name: 'Qo‘ziqorinli Pizza',
+    category: 'fastfood',
+    badge: 'FASTFUD',
+    price: 42000,
+    icon: 'pizza',
+    inStock: true,
+    description: "Yangi qo‘ziqorinlar va xushbo‘y o‘tlar bilan",
+    image: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=600&q=80"
+  },
+
+  // --- SALATLAR ---
+  {
+    id: 's1',
+    name: 'Sezar salati',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 32000,
+    icon: 'salad',
+    inStock: true,
+    description: "Grilda pishgan tovuq go‘shti, aysberg, parmesan va sezar sousi",
+    image: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's2',
+    name: 'Yunoncha salat',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 28000,
+    icon: 'salad',
+    inStock: true,
+    description: "Yangi bodring, pomidor, zaytun mevalari va feta pishlog‘i",
+    image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's3',
+    name: 'Smak salati',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 26000,
+    icon: 'salad',
+    inStock: true,
+    description: "Dudlangan go‘sht, qarsildoq suxariki va maxsus sous",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's4',
+    name: 'Bahor salati',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 20000,
+    icon: 'salad',
+    inStock: true,
+    description: "Yangi rediska, bodring, ko‘katlar va smetana",
+    image: "https://images.unsplash.com/photo-1607532941433-304659e8198a?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's5',
+    name: 'Achchiq-chuchuk',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 15000,
+    icon: 'salad',
+    inStock: true,
+    description: "Yozgi shirin pomidor, piyoz va mayin achchiq qalampir",
+    image: "https://images.unsplash.com/photo-1592417817098-8f3d6ef2c6ff?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 's6',
+    name: 'Mujskoy kapriz',
+    category: 'salad',
+    badge: 'SALAT',
+    price: 35000,
+    icon: 'salad',
+    inStock: true,
+    description: "Tillar, mol go‘shti, pishloq va yong‘oqli to‘yimli salat",
+    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80"
+  },
+
+  // --- DESERTLAR ---
+  {
+    id: 'ds1',
+    name: 'Nyu-York Cheesecake',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 28000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Nozik qaymoqli klassik amerika chizkeyki",
+    image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds2',
+    name: 'Tiramisu',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 26000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Italyancha maskarpone va qahvali xushbo‘y desert",
+    image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds3',
+    name: 'Shokoladli Fondan',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 25000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Ichida issiq shokolad oquvchi nozik pirojnoe",
+    image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds4',
+    name: 'Medovik torti',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 22000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Tabiiy tog‘ asali va mayin qaymoqli qatlamlar",
+    image: "https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds5',
+    name: 'San-Sebastian',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 30000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Ispancha kuydirilgan qaymoqli chizkeyk",
+    image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'ds6',
+    name: 'Muzqaymoq assorti',
+    category: 'dessert',
+    badge: 'DESERT',
+    price: 18000,
+    icon: 'dessert',
+    inStock: true,
+    description: "Vanil, qulupnay va shokoladli shariklar",
+    image: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=600&q=80"
+  },
+
+  // --- ICHIMLIKLAR ---
   {
     id: 'd1',
     name: 'Fanta 0.5L',
@@ -281,7 +480,6 @@ const DEFAULT_PRODUCTS = [
     description: "Muzdek apelsinli tetiklantiruvchi ichimlik",
     image: "https://images.unsplash.com/photo-1624517452488-04869289c4ca?auto=format&fit=crop&w=600&q=80"
   },
-  // 8. Fanta 2L
   {
     id: 'd2',
     name: 'Fanta 2L',
@@ -290,12 +488,22 @@ const DEFAULT_PRODUCTS = [
     price: 15000,
     icon: 'fanta',
     inStock: true,
-    description: "Katta dastuxonlar uchun 2 litrli gazli ichimlik",
+    description: "Katta dasturxonlar uchun 2 litrli gazli ichimlik",
     image: "https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?auto=format&fit=crop&w=600&q=80"
   },
-  // 9. Coca-Cola 1L
   {
     id: 'd3',
+    name: 'Coca-Cola 0.5L',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 8000,
+    icon: 'cola',
+    inStock: true,
+    description: "Klassik ta’mga ega muzdek gazli kola",
+    image: "https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'd4',
     name: 'Coca-Cola 1L',
     category: 'drinks',
     badge: 'ICHIMLIK',
@@ -305,9 +513,19 @@ const DEFAULT_PRODUCTS = [
     description: "Klassik ta’mga ega tetiklantiruvchi ichimlik",
     image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=600&q=80"
   },
-  // 10. Suv (0.5L)
   {
-    id: 'd4',
+    id: 'd5',
+    name: 'Sprite 0.5L',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 8000,
+    icon: 'drinks',
+    inStock: true,
+    description: "Limon va laym ta’mli muzdek gazli ichimlik",
+    image: "https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'd6',
     name: 'Suv (0.5L)',
     category: 'drinks',
     badge: 'ICHIMLIK',
@@ -317,51 +535,229 @@ const DEFAULT_PRODUCTS = [
     description: "Toza tabiiy gazsiz tog‘ suvi",
     image: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80"
   },
+  {
+    id: 'd7',
+    name: 'Qulupnayli Mojito',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 22000,
+    icon: 'cocktail',
+    inStock: true,
+    description: "Yangi qulupnay, yalpiz va laymli muzdek kokteyl",
+    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'd8',
+    name: 'Apelsin freş',
+    category: 'drinks',
+    badge: 'ICHIMLIK',
+    price: 25000,
+    icon: 'juice',
+    inStock: true,
+    description: "100% tabiiy yangi siqilgan apelsin sharbati",
+    image: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=600&q=80"
+  },
 
-  // Qahva va qo'shimcha
+  // --- QAHVA VA CHOY ---
   {
     id: 'c1',
-    name: "Limonli choy",
+    name: 'Espresso',
     category: 'coffee',
-    badge: 'ICHIMLIK',
-    price: 7000,
-    icon: 'tea',
+    badge: 'QAHVA',
+    price: 12000,
+    icon: 'coffee',
     inStock: true,
-    description: "Yalpiz va limonli xushbo‘y shifobaxsh choy",
-    image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80"
+    description: "Kuchli va xushbo‘y quyuq italyancha qahva",
+    image: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&w=600&q=80"
   },
   {
     id: 'c2',
     name: 'Kofe Americano',
     category: 'coffee',
-    badge: 'ICHIMLIK',
-    price: 14000,
+    badge: 'QAHVA',
+    price: 15000,
     icon: 'coffee',
     inStock: true,
-    description: "Yangi yanchilgan donali achchiq qora kofe",
+    description: "Yangi yanchilgan donali klassik qora kofe",
     image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80"
   },
   {
     id: 'c3',
     name: 'Kapuchino',
     category: 'coffee',
-    badge: 'ICHIMLIK',
+    badge: 'QAHVA',
     price: 18000,
     icon: 'coffee',
     inStock: true,
-    description: "Qalin sut ko‘pikli va dolchinli kapuchino",
+    description: "Qalin sut ko‘pikli mayin xushbo‘y espresso",
     image: "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=600&q=80"
   },
   {
     id: 'c4',
-    name: 'Cheesecake',
+    name: 'Latte',
     category: 'coffee',
-    badge: 'DESERT',
-    price: 24000,
-    icon: 'cake',
+    badge: 'QAHVA',
+    price: 20000,
+    icon: 'coffee',
     inStock: true,
-    description: "Klassik Nyu-York chizkeyki mevali qaymoq bilan",
-    image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=600&q=80"
+    description: "Nozik sutli va latte-art naqshli qahva",
+    image: "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'c5',
+    name: 'Muzli Iced Latte',
+    category: 'coffee',
+    badge: 'QAHVA',
+    price: 22000,
+    icon: 'coffee',
+    inStock: true,
+    description: "Muz va sovuq sut bilan tayyorlangan tetiklantiruvchi latte",
+    image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    id: 'c6',
+    name: 'Limonli va yalpizli choy',
+    category: 'coffee',
+    badge: 'QAHVA',
+    price: 10000,
+    icon: 'tea',
+    inStock: true,
+    description: "Choynakda damlangan xushbo‘y ko‘k yoki qora choy",
+    image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80"
+  }
+];
+
+// 10 ta xodim ro'yxati va ularning oylik maoshlari (Staff & Payroll)
+const DEFAULT_STAFF = [
+  {
+    id: 'emp_1',
+    name: 'Alisher Gayratov',
+    role: 'Bosh kassir',
+    department: 'Kassa',
+    phone: '+998 90 123-45-67',
+    salary: 5500000,
+    shift: '08:00 - 20:00 (1-smena)',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-04-12',
+    experience: '3 yil'
+  },
+  {
+    id: 'emp_2',
+    name: 'Sardor Rahimov',
+    role: 'Bosh oshpaz (Shef)',
+    department: 'Oshxona',
+    phone: '+998 91 234-56-78',
+    salary: 8000000,
+    shift: '09:00 - 21:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2022-08-15',
+    experience: '6 yil'
+  },
+  {
+    id: 'emp_3',
+    name: 'Malika Usmonova',
+    role: 'Kassir / Administrator',
+    department: 'Kassa',
+    phone: '+998 93 345-67-89',
+    salary: 5000000,
+    shift: '12:00 - 23:00 (2-smena)',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-09-01',
+    experience: '2 yil'
+  },
+  {
+    id: 'emp_4',
+    name: 'Jasur Qodirov',
+    role: 'Fastfud oshpazi',
+    department: 'Oshxona',
+    phone: '+998 94 456-78-90',
+    salary: 6000000,
+    shift: '10:00 - 22:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-02-10',
+    experience: '4 yil'
+  },
+  {
+    id: 'emp_5',
+    name: 'Nigora Karimova',
+    role: 'Qandolatchi (Desert ustasi)',
+    department: 'Qandolat',
+    phone: '+998 97 567-89-01',
+    salary: 6500000,
+    shift: '08:00 - 18:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-01-20',
+    experience: '5 yil'
+  },
+  {
+    id: 'emp_6',
+    name: 'Dilshodbek Toirov',
+    role: 'Katta Barista',
+    department: 'Bar',
+    phone: '+998 90 678-90-12',
+    salary: 4800000,
+    shift: '08:00 - 20:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-06-15',
+    experience: '3 yil'
+  },
+  {
+    id: 'emp_7',
+    name: 'Bobur Mirzayev',
+    role: 'Katta ofitsiant',
+    department: 'Zal',
+    phone: '+998 91 789-01-23',
+    salary: 4200000,
+    shift: '09:00 - 21:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-05-10',
+    experience: '2 yil'
+  },
+  {
+    id: 'emp_8',
+    name: 'Aziza Shokirova',
+    role: 'Ofitsiant',
+    department: 'Zal',
+    phone: '+998 93 890-12-34',
+    salary: 3800000,
+    shift: '11:00 - 23:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-11-05',
+    experience: '1 yil'
+  },
+  {
+    id: 'emp_9',
+    name: 'Farrux Ergashev',
+    role: 'Ofitsiant',
+    department: 'Zal',
+    phone: '+998 94 901-23-45',
+    salary: 3800000,
+    shift: '11:00 - 23:00',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2023-10-18',
+    experience: '1 yil'
+  },
+  {
+    id: 'emp_10',
+    name: 'Gulbahor Olimova',
+    role: 'Tozalik xodimi',
+    department: 'Servis',
+    phone: '+998 99 012-34-56',
+    salary: 3200000,
+    shift: '07:30 - 19:30',
+    status: 'Faol',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=250&q=80',
+    joinedDate: '2022-11-01',
+    experience: '3 yil'
   }
 ];
 
